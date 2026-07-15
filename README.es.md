@@ -4,7 +4,7 @@
 
 > Convierte entrevistas con clientes en memoria, la memoria en tareas trazables, y las tareas en trabajo para coding agents — con evals como puerta de control.
 
-**openfde** es un sistema de memoria de engagements, local-first, para forward deployed engineers (FDEs). Introduce notas de entrevistas, registros de chat y documentos; los extrae en un grafo de conocimiento estructurado, citable y con línea temporal — y tanto tú como tus coding agents lo consultan mediante la misma CLI.
+**openfde** es un sistema de memoria de engagements, local-first, para forward deployed engineers (FDEs). Introduce notas de entrevistas, registros de chat y documentos; los extrae en un grafo de conocimiento estructurado, citable y con línea temporal — y tanto tú como tus coding agents lo manejan con la misma CLI: buscar memoria, reclamar tareas, obtener paquetes de contexto y entregar al jefe del cliente un informe donde cada afirmación cita su fuente.
 
 ![Interfaz de notas de openfde](./docs/notes-ui.png)
 
@@ -24,21 +24,32 @@ openfde convierte las tres cosas en un solo sistema, empezando por la memoria.
 - **La procedencia se exige, no se recomienda.** El contenido sin URI de origen se rechaza al escribir. Cada hecho recuperado se expande hasta la cita literal de la que proviene.
 - **Memoria bitemporal.** Los hechos contradictorios se reemplazan, nunca se borran. `recall --mode handoff` reproduce la línea temporal — incluyendo lo que creías antes y qué lo sustituyó.
 - **Sin LLM en la ruta de lectura.** Búsqueda de texto completo (con segmentación CJK) más expansión de grafo a un salto, en milisegundos. El LLM solo trabaja en la escritura, restringido por una ontología de dominio fija.
-- **Nativo para agents.** Todos los comandos soportan `--json`. Añade una línea a las instrucciones de tu agent y podrá consultar la memoria del engagement en plena tarea.
-- **Un espacio de trabajo markdown-first al estilo Obsidian.** `openfde serve` abre una interfaz local donde cada entidad y episodio es una nota markdown — árbol jerárquico, [[wiki-enlaces]] entre entidades, citas en línea — con un grafo de fuerzas dirigidas como vista complementaria (haz clic en un nodo para abrir su nota).
+- **Nativo para agents.** Todos los comandos soportan `--json`. Añade unas líneas a las instrucciones de tu agent y podrá consultar la memoria, reclamar tareas y devolver hallazgos en plena tarea.
+- **Tareas trazables (dispatch agent-pull).** Las tarjetas de tarea viven en el ledger con una máquina de estados y un registro de auditoría; `openfde context <task>` ensambla el paquete de munición — restricciones primero, memoria relacionada después, todo citado.
+- **Un espacio de trabajo markdown-first al estilo Obsidian.** `openfde serve` abre una interfaz local donde cada entidad, episodio y tarea es una nota markdown — árbol jerárquico, [[wiki-enlaces]] entre entidades, citas en línea — con un grafo de fuerzas dirigidas como vista complementaria (haz clic en un nodo para abrir su nota).
+- **Un informe ejecutivo para el jefe del cliente.** `/report` genera una página clara e imprimible que responde cuatro preguntas desde el grafo: qué podemos asumir, cuánta carga elimina, qué se reemplaza y cuánto vale — con preguntas de cuantificación generadas automáticamente donde aún faltan números.
 
-  ![Vista de grafo de openfde](./docs/graph-ui.png)
+  ![Informe ejecutivo de openfde](./docs/report-ui.png)
 
 ## Inicio rápido
 
 ```sh
 pnpm install
+
+# 1. memoria: entrevistas dentro, hechos citados fuera
 pnpm openfde engagement create "acme corp"
 pnpm openfde ingest ./notes/entrevista.md --kind message --speaker García
 pnpm openfde extract               # requiere ANTHROPIC_API_KEY; usa --mock sin conexión
 pnpm openfde recall conciliación
 pnpm openfde recall "fuente de datos" --mode handoff   # línea temporal con hechos reemplazados
-pnpm openfde serve                 # interfaz de grafo en http://localhost:4517
+
+# 2. dispatch: la memoria se convierte en trabajo trazable
+pnpm openfde task create "Automatizar la limpieza de CSV" --criteria "Se ejecuta sin supervisión" --source "interview://onsite#pain-csv"
+pnpm openfde task claim <id> && pnpm openfde context <id>   # lo que un agent ejecuta antes de empezar
+
+# 3. enséñaselo al jefe
+pnpm openfde report                # markdown por stdout
+pnpm openfde serve                 # espacio de trabajo en :4517, informe imprimible en /report
 ```
 
 ## CLI
@@ -86,7 +97,7 @@ Consulta [ARCHITECTURE.md](./ARCHITECTURE.md) (en inglés) para el mapa de módu
 ```sh
 pnpm test                 # vitest
 pnpm typecheck
-pnpm -C apps/cli build    # empaqueta la CLI con la interfaz de grafo
+pnpm -C apps/cli build    # empaqueta la CLI con la interfaz del espacio de trabajo
 ```
 
 ## Hoja de ruta

@@ -4,7 +4,7 @@
 
 > 顧客インタビューをメモリに、メモリを追跡可能なタスクに、タスクを coding agent の仕事に——eval がゲートする。
 
-**openfde** は FDE（Forward Deployed Engineer）のためのローカルファーストなエンゲージメント・メモリシステムです。インタビューのメモ、チャットログ、ドキュメントを投入すると、構造化され、引用可能で、時間軸を持つナレッジグラフへと抽出します。人間も coding agent も、同じ CLI でこれを検索します。
+**openfde** は FDE（Forward Deployed Engineer）のためのローカルファーストなエンゲージメント・メモリシステムです。インタビューのメモ、チャットログ、ドキュメントを投入すると、構造化され、引用可能で、時間軸を持つナレッジグラフへと抽出します。人間も coding agent も同じ CLI で操作します：メモリの検索、タスクの取得、コンテキストパックの受け取り、そしてすべての主張に出典がつくレポートを顧客の上司へ。
 
 ![openfde ノート UI](./docs/notes-ui.png)
 
@@ -24,21 +24,32 @@ openfde はこの 3 つを 1 つのシステムに変えます。まずはメモ
 - **出典は強制、推奨ではない。** ソース URI のないコンテンツは書き込み時に拒否されます。検索されたすべてのファクトは、元の逐語的な引用まで展開できます。
 - **バイテンポラルなメモリ。** 矛盾するファクトは削除ではなく無効化で置き換えます。`recall --mode handoff` はタイムラインを再生します——当時何を信じていたか、何がそれを置き換えたかを含めて。
 - **読み取りパスに LLM なし。** 全文検索（CJK 対応の文字分割つき）と 1 ホップのグラフ展開で、ミリ秒単位の応答。LLM は書き込み側でのみ、固定ドメインオントロジーの制約下で動作します。
-- **Agent ネイティブ。** すべてのコマンドが `--json` に対応。Agent の指示に 1 行加えるだけで、タスク中にエンゲージメント・メモリを検索できます。
-- **Markdown ファーストの Obsidian スタイル・ワークスペース。** `openfde serve` で開くローカル UI では、すべてのエンティティとエピソードが Markdown ノートです——階層ツリー、エンティティ間の [[wiki リンク]]、インラインの引用。力学グラフはコンパニオンビュー（ノードをクリックするとノートが開きます）。
+- **Agent ネイティブ。** すべてのコマンドが `--json` に対応。Agent の指示に数行加えるだけで、メモリ検索・タスク取得・発見の書き戻しができます。
+- **追跡可能なタスク（agent-pull ディスパッチ）。** タスクカードは ledger 内にあり、状態機械と監査ログつき。`openfde context <task>` が弾薬パックを組み立てます——制約が先頭、関連メモリが続き、すべて引用つき。
+- **Markdown ファーストの Obsidian スタイル・ワークスペース。** `openfde serve` で開くローカル UI では、すべてのエンティティ、エピソード、タスクが Markdown ノートです——階層ツリー、エンティティ間の [[wiki リンク]]、インラインの引用。力学グラフはコンパニオンビュー（ノードをクリックするとノートが開きます）。
+- **顧客の上司向けエグゼクティブ・レポート。** `/report` はグラフから 4 つの問いに答える、明るく印刷可能なページを描画します：何を引き受けられるか、負荷はどれだけ減るか、何が置き換わるか、価値はいくらか——数字が欠けている箇所には定量化質問を自動生成。
 
-  ![openfde グラフビュー](./docs/graph-ui.png)
+  ![openfde エグゼクティブ・レポート](./docs/report-ui.png)
 
 ## クイックスタート
 
 ```sh
 pnpm install
+
+# 1. メモリ：インタビューを入れ、引用つきファクトを出す
 pnpm openfde engagement create "acme corp"
 pnpm openfde ingest ./notes/interview.md --kind message --speaker 田中
 pnpm openfde extract               # ANTHROPIC_API_KEY が必要；オフラインは --mock
 pnpm openfde recall 照合
 pnpm openfde recall データソース --mode handoff   # 無効化済みファクトを含むタイムライン
-pnpm openfde serve                 # グラフ UI: http://localhost:4517
+
+# 2. ディスパッチ：メモリを追跡可能な仕事に
+pnpm openfde task create "CSV クリーンアップの自動化" --criteria "無人で実行" --source "interview://onsite#pain-csv"
+pnpm openfde task claim <id> && pnpm openfde context <id>   # agent が開始前に実行する 2 ステップ
+
+# 3. 上司に見せる
+pnpm openfde report                # Markdown を標準出力へ
+pnpm openfde serve                 # ワークスペースは :4517、印刷可能レポートは /report
 ```
 
 ## CLI
@@ -86,7 +97,7 @@ apps/cli            openfde コマンド（人間と agent の共通エントリ
 ```sh
 pnpm test                 # vitest
 pnpm typecheck
-pnpm -C apps/cli build    # グラフ UI を含む CLI のバンドル
+pnpm -C apps/cli build    # ワークスペース UI を含む CLI のバンドル
 ```
 
 ## ロードマップ
