@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { ledgerDbPath, engagementDir, ensureDir } from "./paths.js";
+import { ledgerDbPath, engagementDir, ensureDir } from "../engagement/paths.js";
 
 export type Ledger = Database.Database;
 

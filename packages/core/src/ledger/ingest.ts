@@ -1,7 +1,7 @@
 import { ExtractionResult, type EpisodeKind } from "@openfde/ontology";
-import type { Ledger } from "./db.js";
-import { newId, nowIso } from "./db.js";
-import type { Extractor } from "./extract/types.js";
+import type { Ledger } from "./database.js";
+import { newId, nowIso } from "./database.js";
+import type { Extractor } from "../extraction/extractor.js";
 import { resolveEntity, resolveFact } from "./resolve.js";
 
 export interface IngestInput {

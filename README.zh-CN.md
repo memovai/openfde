@@ -78,6 +78,8 @@ packages/core       Ledger：engagement / 摄取 / 抽取 / 消解 / 检索
 apps/cli            openfde 命令（人和 agent 共用入口）
 ```
 
+模块地图与未来模块的落点见 [ARCHITECTURE.md](./ARCHITECTURE.md)（英文）。
+
 ## 开发
 
 ```sh

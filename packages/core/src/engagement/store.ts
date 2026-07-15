@@ -8,7 +8,7 @@ import {
   rawDir,
   slugify,
 } from "./paths.js";
-import { openLedger } from "./db.js";
+import { openLedger } from "../ledger/database.js";
 
 interface GlobalConfig {
   currentEngagement?: string;

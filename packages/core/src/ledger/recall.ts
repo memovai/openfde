@@ -1,5 +1,5 @@
-import type { Ledger } from "./db.js";
-import { ftsQuery } from "./fts.js";
+import type { Ledger } from "./database.js";
+import { ftsQuery } from "./search.js";
 
 export interface RecallHit {
   factId: string;

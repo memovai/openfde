@@ -78,6 +78,8 @@ packages/core       Ledger: engagements / ingest / extract / resolve / recall
 apps/cli            The openfde command (shared entry point for humans and agents)
 ```
 
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the module map and where future work lands.
+
 ## Development
 
 ```sh

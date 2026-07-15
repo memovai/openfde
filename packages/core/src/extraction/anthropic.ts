@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { ExtractionResult, ENTITY_TYPES, RELATION_TYPES } from "@openfde/ontology";
-import type { Extractor, EpisodeInput } from "./types.js";
+import type { Extractor, EpisodeInput } from "./extractor.js";
 
 const SYSTEM = `You are the engagement-memory extractor for an FDE (Forward Deployed Engineer) team.
 The input is a piece of customer material (interview notes, chat logs, document fragments), possibly in any language. Extract entities and facts strictly within the fixed ontology.

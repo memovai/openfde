@@ -78,6 +78,8 @@ packages/core       Ledger: engagements / ingesta / extracción / resolución / 
 apps/cli            El comando openfde (punto de entrada compartido para humanos y agents)
 ```
 
+Consulta [ARCHITECTURE.md](./ARCHITECTURE.md) (en inglés) para el mapa de módulos y dónde encaja el trabajo futuro.
+
 ## Desarrollo
 
 ```sh

@@ -1,5 +1,5 @@
 import type { ExtractionResult } from "@openfde/ontology";
-import type { Extractor, EpisodeInput } from "./types.js";
+import type { Extractor, EpisodeInput } from "./extractor.js";
 
 /**
  * Offline/test extractor: matches lines in the marker format

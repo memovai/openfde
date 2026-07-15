@@ -1,7 +1,7 @@
 import type { EntityDraft, FactDraft, ResolutionOp } from "@openfde/ontology";
-import type { Ledger } from "./db.js";
-import { newId, nowIso } from "./db.js";
-import { cjkSegment } from "./fts.js";
+import type { Ledger } from "./database.js";
+import { newId, nowIso } from "./database.js";
+import { cjkSegment } from "./search.js";
 
 export interface EntityRow {
   id: string;

@@ -78,6 +78,8 @@ packages/core       Ledger：エンゲージメント / 取り込み / 抽出 / 
 apps/cli            openfde コマンド（人間と agent の共通エントリポイント）
 ```
 
+モジュールマップと今後の作業の配置は [ARCHITECTURE.md](./ARCHITECTURE.md)（英語）を参照。
+
 ## 開発
 
 ```sh
