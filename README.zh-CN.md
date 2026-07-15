@@ -1,10 +1,10 @@
-# openfde
+# OpenFDE: AI workspace for FDEs
 
 [English](./README.md) | **简体中文** | [日本語](./README.ja.md) | [Español](./README.es.md)
 
 > 把客户访谈变成记忆，把记忆变成可追踪的任务，把任务交给 coding agent 执行——由 eval 把关。
 
-**openfde** 是为 FDE（Forward Deployed Engineer，前沿部署工程师）打造的本地优先 engagement 记忆系统。把访谈纪要、聊天记录、文档倒进来，它会抽取成结构化、可引证、带时间线的知识图谱——你和你的 coding agent 用同一把 CLI 驱动它：检索记忆、认领任务、拉取上下文弹药包，并给客户老板一份每条结论都有出处的报告。
+**OpenFDE** 是为 FDE（Forward Deployed Engineer）打造的本地优先 AI 工作台。它把 engagement 材料——访谈、聊天记录、文档、PDF、图片——编译成本体支撑的运营记忆，并让人和 coding agent 形成闭环：agent 从 ledger 认领任务、拉取上下文包、执行并回写发现——客户管理层实时看到进展，每条结论都有出处。
 
 ![openfde 笔记界面](./docs/notes-ui.png)
 
@@ -16,9 +16,16 @@ FDE 的工作状态散落在三个脆弱的地方：
 - **任务在脑子里。** 从"访谈里听到要做什么"到"派给 coding agent"之间没有系统、没有上下文、没有溯源链。
 - **验收在感觉里。** Agent 的产出靠感觉接受，而不是靠 eval。
 
-openfde 把这三样变成一个系统，从记忆开始。
+OpenFDE 把这三样变成一个系统，从记忆开始。
 
-## 特性
+## OpenFDE 做什么
+
+- **本体支撑的运营记忆（ontology-backed operational memory）。** 固定的 FDE 领域本体——目标、业务流、决策、约束、数据源、痛点——约束抽取过程，进入 ledger 的是运营知识而非散文。点线面透镜（价值面 → 业务流 → 决策点）按管理层的思维方式组织记忆。
+- **强制溯源的上下文管理（context management）。** 你对 agent 能读到什么拥有完全的权限与可见性：engagement 级隔离、每条事实带原文引用、上下文包永远以约束开头。
+- **闭环的 agent 运作（closed-loop operation）。** Coding agent 通过同一把 CLI 认领任务、拉取上下文、执行、回写结果——持续反馈回路：上一步的输出成为下一步的输入（记忆 → 任务 → 发现 → 记忆）。没有任何动作静默落地：工作以可评审的状态迁移返回，全程审计。
+- **人在环审查与治理（human-in-the-loop review）。** 任务状态机把关验收；分享按能力域限定且只读；eval 门禁验收——rubric 作为版本化资产——在路线图上。
+
+## 能力
 
 - **本地优先。** 每个 engagement 一个 SQLite 目录（`~/.openfde/engagements/<slug>/`）。客户数据不出本机；交接一个项目就是移交一个目录。
 - **出处是强制的，不是建议。** 没有来源 URI 的内容在写入时直接拒绝。每条检索结果都能展开到逐字原文。

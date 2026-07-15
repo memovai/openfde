@@ -1,10 +1,10 @@
-# openfde
+# OpenFDE: AI workspace for FDEs
 
 [English](./README.md) | [简体中文](./README.zh-CN.md) | [日本語](./README.ja.md) | **Español**
 
 > Convierte entrevistas con clientes en memoria, la memoria en tareas trazables, y las tareas en trabajo para coding agents — con evals como puerta de control.
 
-**openfde** es un sistema de memoria de engagements, local-first, para forward deployed engineers (FDEs). Introduce notas de entrevistas, registros de chat y documentos; los extrae en un grafo de conocimiento estructurado, citable y con línea temporal — y tanto tú como tus coding agents lo manejan con la misma CLI: buscar memoria, reclamar tareas, obtener paquetes de contexto y entregar al jefe del cliente un informe donde cada afirmación cita su fuente.
+**OpenFDE** es un espacio de trabajo de IA, local-first, para forward deployed engineers. Compila el material del engagement — entrevistas, registros de chat, documentos, PDF, imágenes — en una memoria operativa respaldada por ontología, y cierra el bucle entre humanos y coding agents: los agents reclaman tareas y paquetes de contexto del ledger, ejecutan y devuelven hallazgos — mientras la dirección del cliente observa el progreso en vivo, con cada afirmación citando su fuente.
 
 ![Interfaz de notas de openfde](./docs/notes-ui.png)
 
@@ -16,9 +16,16 @@ El estado de trabajo de un FDE vive en tres lugares frágiles:
 - **Las tareas viven en cabezas.** Entre "lo escuché en una entrevista" y "se lo asigné a un coding agent" no hay sistema, ni contexto, ni rastro hacia la fuente.
 - **La verificación vive en sensaciones.** El trabajo de los agents se acepta por intuición en lugar de por evals.
 
-openfde convierte las tres cosas en un solo sistema, empezando por la memoria.
+OpenFDE convierte las tres cosas en un solo sistema, empezando por la memoria.
 
-## Características
+## Qué hace OpenFDE
+
+- **Memoria operativa respaldada por ontología (ontology-backed operational memory).** Una ontología fija del dominio FDE — objetivos, flujos de negocio, decisiones, restricciones, fuentes de datos, puntos de dolor — restringe la extracción, de modo que lo que entra al ledger es conocimiento operativo, no prosa. La lente punto-línea-plano (planos de valor → flujos de negocio → puntos de decisión) lo organiza como piensa la dirección.
+- **Gestión de contexto con procedencia obligatoria (context management).** Mantienes autoridad y visibilidad completas sobre lo que leen los agents: aislamiento por engagement, hechos con cita a la fuente y paquetes de contexto que siempre empiezan por las restricciones.
+- **Operación de agents en bucle cerrado (closed-loop operation).** Los coding agents reclaman tareas, obtienen contexto, ejecutan y devuelven resultados por la misma CLI — un bucle de retroalimentación continua donde la salida de una operación es la entrada de la siguiente (memoria → tareas → hallazgos → memoria). Nada aterriza en silencio: el trabajo vuelve como transiciones de estado revisables con un registro de auditoría completo.
+- **Revisión human-in-the-loop y gobernanza.** Una máquina de estados de tareas controla la aceptación; el compartir es de solo lectura y con alcance por capacidades; la aceptación con evals — rúbricas como activos versionados — está en la hoja de ruta.
+
+## Capacidades
 
 - **Local-first.** Un directorio SQLite por engagement (`~/.openfde/engagements/<slug>/`). Los datos del cliente nunca salen de tu máquina; traspasar un engagement es entregar un directorio.
 - **La procedencia se exige, no se recomienda.** El contenido sin URI de origen se rechaza al escribir. Cada hecho recuperado se expande hasta la cita literal de la que proviene.

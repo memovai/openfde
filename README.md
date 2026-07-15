@@ -1,10 +1,10 @@
-# openfde
+# OpenFDE: AI workspace for FDEs
 
 **English** | [简体中文](./README.zh-CN.md) | [日本語](./README.ja.md) | [Español](./README.es.md)
 
 > Turn customer interviews into memory, memory into traceable todos, todos into coding-agent work — gated by evals.
 
-**openfde** is a local-first engagement memory system for forward deployed engineers (FDEs). Drop in interview notes, chat logs, and documents; it extracts them into a structured, citable, time-aware knowledge graph — and both you and your coding agents drive it through the same CLI: recall memory, claim tasks, pull context bundles, and hand the customer's boss a report where every claim cites its source.
+**OpenFDE** is a local-first AI workspace for forward deployed engineers. It compiles engagement material — interviews, chat logs, documents, PDFs, images — into an ontology-backed operational memory, and closes the loop between humans and coding agents: agents pull tasks and context bundles from the ledger, execute, and write findings back — while the customer's leadership watches progress live, with every claim citing its source.
 
 ![openfde notes UI](./docs/notes-ui.png)
 
@@ -16,9 +16,16 @@ An FDE's working state lives in three fragile places:
 - **Tasks live in heads.** The gap between "heard it in an interview" and "dispatched it to a coding agent" has no system, no context, no trail back to the source.
 - **Verification lives in feelings.** Agent output gets accepted by vibes instead of evals.
 
-openfde turns all three into one system, starting with memory.
+OpenFDE turns all three into one system, starting with memory.
 
-## Highlights
+## What OpenFDE does
+
+- **Ontology-backed operational memory.** A fixed FDE domain ontology — goals, workflows, decisions, constraints, data sources, pain points — constrains extraction, so what enters the ledger is operational knowledge, not prose. A dot-line-plane lens (value planes → business flows → decision points) organizes it the way leadership thinks.
+- **Context management with enforced provenance.** You keep complete authority and visibility over what agents read: engagement-scoped isolation, source-cited facts, and context bundles that always lead with constraints.
+- **Closed-loop agent operation.** Coding agents claim tasks, pull context, execute, and write results back through the same CLI — a continuous feedback loop where the output of one operation becomes the input of the next (memory → tasks → findings → memory). Nothing lands silently: work returns as reviewable state transitions with a full audit trail.
+- **Human-in-the-loop review and governance.** A task state machine gates acceptance; sharing is capability-scoped and read-only; eval-gated acceptance — rubrics as versioned assets — is on the roadmap.
+
+## Capabilities
 
 - **Local-first.** One SQLite directory per engagement (`~/.openfde/engagements/<slug>/`). Customer data never leaves your machine; handing off an engagement means handing over a directory.
 - **Provenance is enforced, not encouraged.** Content without a source URI is rejected at write time. Every recalled fact expands to the verbatim quote it came from.
