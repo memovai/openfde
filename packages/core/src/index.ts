@@ -65,6 +65,15 @@ export {
   type TreeItem,
 } from "./projections/notes.js";
 
+// interview (dot-line-plane guided sessions)
+export {
+  buildInterviewGuide,
+  interviewMarkdown,
+  type InterviewGuide,
+  type InterviewMode,
+  type InterviewSection,
+} from "./interview/guide.js";
+
 // report
 export {
   buildReport,

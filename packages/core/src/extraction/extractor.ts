@@ -5,6 +5,9 @@ export interface EpisodeInput {
   content: string;
   speaker?: string | null;
   occurredAt?: string | null;
+  /** Set for PDF/image episodes; extractors send the file to the model natively */
+  mediaPath?: string | null;
+  mediaType?: string | null;
 }
 
 /** Extractor interface shared by the LLM implementation and the offline mock */

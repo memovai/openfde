@@ -2,6 +2,7 @@ import { z } from "zod";
 
 /** Relation types of the FDE domain ontology. */
 export const RELATION_TYPES = [
+  "SUPPORTS", // Workflow|Asset → Goal (which value a flow delivers)
   "OWNS", // Person → System
   "TRUSTS", // Person → DataSource
   "DEPENDS_ON", // Workflow/WorkflowStep → System|DataSource

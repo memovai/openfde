@@ -12,6 +12,9 @@ export interface IngestInput {
   span?: string;
   speaker?: string;
   occurredAt?: string;
+  /** For PDF/image episodes: path of the copy under the engagement raw/ dir */
+  mediaPath?: string;
+  mediaType?: string;
 }
 
 export interface EpisodeRow {
@@ -21,6 +24,8 @@ export interface EpisodeRow {
   source_uri: string;
   speaker: string | null;
   occurred_at: string | null;
+  media_path: string | null;
+  media_type: string | null;
   extraction_status: string;
 }
 
@@ -33,8 +38,8 @@ export function ingestEpisode(db: Ledger, input: IngestInput): string {
   }
   const id = newId("ep");
   db.prepare(
-    `INSERT INTO episodes (id, kind, content, source_uri, span, speaker, occurred_at, ingested_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO episodes (id, kind, content, source_uri, span, speaker, occurred_at, media_path, media_type, ingested_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     input.kind,
@@ -43,6 +48,8 @@ export function ingestEpisode(db: Ledger, input: IngestInput): string {
     input.span ?? null,
     input.speaker ?? null,
     input.occurredAt ?? null,
+    input.mediaPath ?? null,
+    input.mediaType ?? null,
     nowIso(),
   );
   return id;
@@ -77,6 +84,8 @@ export async function runExtraction(db: Ledger, extractor: Extractor): Promise<E
           content: episode.content,
           speaker: episode.speaker,
           occurredAt: episode.occurred_at,
+          mediaPath: episode.media_path,
+          mediaType: episode.media_type,
         }),
       );
     } catch (error) {

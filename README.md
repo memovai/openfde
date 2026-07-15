@@ -58,12 +58,13 @@ pnpm openfde serve                          # workspace at :4517, printable repo
 | Command | What it does |
 | --- | --- |
 | `openfde engagement create/list/use` | Manage engagements (one local directory per customer project) |
-| `openfde ingest <files…>` | Ingest material as episodes, with mandatory provenance |
+| `openfde ingest <files…>` | Ingest material as episodes, with mandatory provenance — text, markdown, **PDFs and images** (extracted via Claude natively) |
 | `openfde extract` | Ontology-constrained extraction + two-phase resolution (dedupe / supersede) |
 | `openfde recall <query>` | Search memory; `--mode handoff` for the timeline view; `--json` for agents |
 | `openfde remember <fact> --source <uri>` | Record knowledge discovered mid-task (agent write-back) |
 | `openfde task create/list/claim/start/done/accept` | Traceable task cards with a state machine and audit trail (agent-pull dispatch) |
 | `openfde context <task>` | Assemble the memory ammunition pack for a task: constraints + related facts, all cited |
+| `openfde interview` | Interview guide generated from graph gaps — top-down (value → flows → points, the boss session) or bottom-up (knowledge-mining leads) |
 | `openfde report` | Executive engagement report: opportunities, load relief, automation coverage, value — every claim cited |
 | `openfde status` | Memory overview for the current engagement |
 | `openfde serve` | Local notes + graph workspace, plus a printable executive report at `/report` (optional daemon — the CLI works without it) |

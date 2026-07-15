@@ -57,13 +57,14 @@ pnpm openfde serve                 # espacio de trabajo en :4517, informe imprim
 | Comando | Qué hace |
 | --- | --- |
 | `openfde engagement create/list/use` | Gestiona engagements (un directorio local por proyecto de cliente) |
-| `openfde ingest <files…>` | Ingiere material como episodios, con procedencia obligatoria |
+| `openfde ingest <files…>` | Ingiere material como episodios, con procedencia obligatoria — texto, markdown, **PDF e imágenes** (extraídos nativamente vía Claude) |
 | `openfde extract` | Extracción restringida por ontología + resolución en dos fases (deduplicar / reemplazar) |
 | `openfde recall <query>` | Busca en la memoria; `--mode handoff` para la línea temporal; `--json` para agents |
 | `openfde remember <fact> --source <uri>` | Registra conocimiento descubierto en plena tarea (escritura de agents) |
 | `openfde task create/list/claim/start/done/accept` | Tarjetas de tarea trazables: máquina de estados + registro de auditoría (dispatch agent-pull) |
 | `openfde context <task>` | Ensambla el paquete de memoria de una tarea: restricciones + hechos relacionados, todo citado |
 | `openfde status` | Resumen de memoria del engagement actual |
+| `openfde interview` | Guía de entrevista generada desde los huecos del grafo — top-down (valor → flujos → puntos de decisión, la sesión con el jefe) o bottom-up (pistas de minería de conocimiento) |
 | `openfde report` | Informe ejecutivo del engagement: oportunidades, alivio de carga, cobertura de automatización, valor — cada afirmación citada |
 | `openfde serve` | Espacio de trabajo local de notas + grafo, con un informe ejecutivo imprimible en `/report` (daemon opcional — la CLI funciona sin él) |
 | `openfde share` | Comparte en tu LAN un informe ejecutivo en vivo y de solo lectura mediante un enlace no adivinable — el jefe ve el progreso en tiempo real; todo lo demás sigue siendo solo loopback |

@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS episodes (
   span TEXT,
   speaker TEXT,
   occurred_at TEXT,
+  media_path TEXT,
+  media_type TEXT,
   ingested_at TEXT NOT NULL,
   extraction_status TEXT NOT NULL DEFAULT 'pending'
     CHECK (extraction_status IN ('pending','done','failed','skipped'))
@@ -94,6 +96,17 @@ export function openLedger(slug: string): Ledger {
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   db.exec(SCHEMA);
+  // additive migrations for pre-existing ledgers
+  for (const migration of [
+    "ALTER TABLE episodes ADD COLUMN media_path TEXT",
+    "ALTER TABLE episodes ADD COLUMN media_type TEXT",
+  ]) {
+    try {
+      db.exec(migration);
+    } catch {
+      /* column already exists */
+    }
+  }
   return db;
 }
 

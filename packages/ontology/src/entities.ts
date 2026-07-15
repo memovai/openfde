@@ -3,6 +3,7 @@ import { z } from "zod";
 /** Entity types of the FDE domain ontology. Adding a type = editing this list. */
 export const ENTITY_TYPES = [
   "Customer",
+  "Goal", // the value plane: what the organization is trying to achieve
   "Person",
   "System",
   "DataSource",

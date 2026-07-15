@@ -29,7 +29,7 @@ packages/
         store.ts            #   create / list / use / resolve
       ledger/               # the memory engine
         database.ts         #   SQLite schema (episodes, entities, facts, tasks)
-        ingest.ts           #   provenance-enforced episode intake
+        ingest.ts           #   provenance-enforced episode intake (text + PDF/image pointers)
         resolve.ts          #   two-phase writes: dedupe / supersede, never delete
         recall.ts           #   LLM-free search: FTS + 1-hop graph expansion
         search.ts           #   FTS query building, CJK segmentation, stopwords
@@ -40,6 +40,8 @@ packages/
       dispatch/             # agent-pull task coordination (Mode B)
         tasks.ts            #   task cards, state machine, audit events
         context.ts          #   context bundles: constraints + related memory
+      interview/            # dot-line-plane interview guides from graph gaps
+        guide.ts            #   top-down (value->flows->points) and bottom-up (mining leads)
       projections/          # markdown views of the ledger (shared by webui & export)
         notes.ts            #   tree + entity/episode/task notes, [[wiki-links]]
       report/               # executive projections
@@ -66,7 +68,7 @@ apps/
 
 | Planned module | Home | Notes |
 | --- | --- | --- |
-| Ingestion connectors (Slack/Teams exports, PDF) | `packages/core/src/ingestion/` | parsers normalize sources into `IngestInput`; MinerU stays an isolated external service |
+| Ingestion connectors (Slack/Teams exports) | `packages/core/src/ingestion/` | parsers normalize sources into `IngestInput`; PDFs/images already ship via Claude-native blocks; MinerU stays an isolated external service |
 | Asset library (prompts, rubrics, eval datasets, skills) | `packages/core/src/assets/` | git-repo-backed, engagement→team promotion behind a desensitization gate |
 | Eval execution (rubric scoring of `review` tasks) | `packages/core/src/eval/` | consumes rubric assets, writes scores back; Langfuse optional backend |
 | Orchestrated dispatch runner (Mode A) | `packages/core/src/dispatch/runner/` | optional daemon spawning agents on `ready` tasks in git worktrees; same task table |

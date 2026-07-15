@@ -1,7 +1,7 @@
 import type { Command } from "commander";
-import { readFileSync } from "node:fs";
+import { copyFileSync, readFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
-import { ingestEpisode, openLedger, resolveEngagement } from "@openfde/core";
+import { ingestEpisode, newId, openLedger, paths, resolveEngagement } from "@openfde/core";
 import type { EpisodeKind } from "@openfde/ontology";
 import { fail } from "../lib/helpers.js";
 

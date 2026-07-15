@@ -57,13 +57,14 @@ pnpm openfde serve                 # 工作区 :4517，可打印报告在 /repor
 | 命令 | 作用 |
 | --- | --- |
 | `openfde engagement create/list/use` | 管理 engagement（一个客户项目一个本地目录） |
-| `openfde ingest <files…>` | 摄取材料为 episode，出处必填 |
+| `openfde ingest <files…>` | 摄取材料为 episode，出处必填——文本、Markdown、**PDF 和图片**（经 Claude 原生抽取） |
 | `openfde extract` | 本体约束抽取 + 两阶段消解（去重 / 失效替代） |
 | `openfde recall <query>` | 检索记忆；`--mode handoff` 看时间线；`--json` 给 agent |
 | `openfde remember <fact> --source <uri>` | 记录任务中发现的新知识（agent 回写） |
 | `openfde task create/list/claim/start/done/accept` | 可追溯的任务卡：状态机 + 审计事件流（agent-pull 派发） |
 | `openfde context <task>` | 组装任务的记忆弹药包：约束 + 相关事实，全部带引用 |
 | `openfde status` | 当前 engagement 的记忆概况 |
+| `openfde interview` | 从图谱缺口生成访谈指南——自上而下（价值→业务流→决策点，老板场）或自下而上（知识挖掘线索） |
 | `openfde report` | 高管版 engagement 报告：机会、减负、自动化覆盖、价值——每条结论带引用 |
 | `openfde serve` | 本地笔记 + 图谱工作区，另有可打印的高管报告页 `/report`（可选守护进程，CLI 不依赖它） |
 | `openfde share` | 在局域网内用不可猜测的链接分享实时只读高管报告——老板实时看进展；其余一切仍只对本机开放 |

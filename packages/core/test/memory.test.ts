@@ -136,6 +136,28 @@ describe("recall", () => {
   });
 });
 
+describe("media episodes (PDF / images)", () => {
+  it("stores media pointers and keeps provenance; mock extraction yields no facts", async () => {
+    const id = ingestEpisode(db(), {
+      kind: "text",
+      content: "[media] diagram.png",
+      sourceUri: "file:///original/diagram.png",
+      mediaPath: "/tmp/copied-diagram.png",
+      mediaType: "image/png",
+    });
+    const row = db()
+      .prepare("SELECT media_path, media_type, source_uri FROM episodes WHERE id = ?")
+      .get(id) as { media_path: string; media_type: string; source_uri: string };
+    expect(row.media_path).toBe("/tmp/copied-diagram.png");
+    expect(row.media_type).toBe("image/png");
+    expect(row.source_uri).toBe("file:///original/diagram.png");
+
+    const stats = await runExtraction(db(), new MockExtractor());
+    expect(stats.episodes).toBe(1);
+    expect(stats.facts.ADD).toBe(0); // real extraction needs the LLM extractor
+  });
+});
+
 describe("multilingual content (CJK segmentation)", () => {
   // Engagement material arrives in any language; FTS5's unicode61 tokenizer
   // cannot segment CJK, so this guards the app-level segmentation layer.
