@@ -9,6 +9,7 @@ import { registerContext } from "./commands/context.js";
 import { registerReport } from "./commands/report.js";
 import { registerStatus } from "./commands/status.js";
 import { registerServe } from "./commands/serve.js";
+import { registerShare } from "./commands/share.js";
 
 const program = new Command();
 program
@@ -28,5 +29,6 @@ registerContext(program);
 registerReport(program);
 registerStatus(program);
 registerServe(program);
+registerShare(program);
 
 program.parseAsync(process.argv);

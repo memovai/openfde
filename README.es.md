@@ -27,7 +27,7 @@ openfde convierte las tres cosas en un solo sistema, empezando por la memoria.
 - **Nativo para agents.** Todos los comandos soportan `--json`. Añade unas líneas a las instrucciones de tu agent y podrá consultar la memoria, reclamar tareas y devolver hallazgos en plena tarea.
 - **Tareas trazables (dispatch agent-pull).** Las tarjetas de tarea viven en el ledger con una máquina de estados y un registro de auditoría; `openfde context <task>` ensambla el paquete de munición — restricciones primero, memoria relacionada después, todo citado.
 - **Un espacio de trabajo markdown-first al estilo Obsidian.** `openfde serve` abre una interfaz local donde cada entidad, episodio y tarea es una nota markdown — árbol jerárquico, [[wiki-enlaces]] entre entidades, citas en línea — con un grafo de fuerzas dirigidas como vista complementaria (haz clic en un nodo para abrir su nota).
-- **Un informe ejecutivo para el jefe del cliente.** `/report` genera una página clara e imprimible que responde cuatro preguntas desde el grafo: qué podemos asumir, cuánta carga elimina, qué se reemplaza y cuánto vale — con preguntas de cuantificación generadas automáticamente donde aún faltan números.
+- **Un informe ejecutivo para el jefe del cliente — en vivo.** `/report` genera una página clara e imprimible que responde cuatro preguntas desde el grafo: qué podemos asumir, cuánta carga elimina, qué se reemplaza y cuánto vale — con preguntas de cuantificación generadas automáticamente donde aún faltan números. `openfde share` reparte un enlace LAN de solo lectura que se actualiza en tiempo real mientras los agents trabajan, con un feed de progreso en vivo.
 
   ![Informe ejecutivo de openfde](./docs/report-ui.png)
 
@@ -66,6 +66,7 @@ pnpm openfde serve                 # espacio de trabajo en :4517, informe imprim
 | `openfde status` | Resumen de memoria del engagement actual |
 | `openfde report` | Informe ejecutivo del engagement: oportunidades, alivio de carga, cobertura de automatización, valor — cada afirmación citada |
 | `openfde serve` | Espacio de trabajo local de notas + grafo, con un informe ejecutivo imprimible en `/report` (daemon opcional — la CLI funciona sin él) |
+| `openfde share` | Comparte en tu LAN un informe ejecutivo en vivo y de solo lectura mediante un enlace no adivinable — el jefe ve el progreso en tiempo real; todo lo demás sigue siendo solo loopback |
 
 ## Integración con agents
 

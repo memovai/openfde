@@ -75,6 +75,22 @@ export function reportMarkdown(report: ReportData): string {
   );
   for (const c of report.constraints) md.push(`- ${c.statement} (${c.sourceUri})`);
 
+  if (report.activity.length > 0) {
+    md.push("", "Recent activity:", "");
+    for (const a of report.activity.slice(0, 8)) {
+      const what =
+        a.kind === "status"
+          ? `${a.fromStatus} -> ${a.toStatus}`
+          : a.kind === "created"
+            ? "created"
+            : "note";
+      md.push(
+        `- ${a.at.slice(0, 16).replace("T", " ")} · ${a.taskTitle} · ${what}` +
+          `${a.actor ? ` (${a.actor})` : ""}${a.note ? `: ${a.note}` : ""}`,
+      );
+    }
+  }
+
   if (report.quantifyQuestions.length > 0) {
     md.push(
       "",

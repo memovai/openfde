@@ -27,7 +27,7 @@ openfde turns all three into one system, starting with memory.
 - **Agent-native.** Every command supports `--json`. Add a few lines to your agent's instructions and it can query memory, claim tasks, and write findings back mid-task.
 - **Traceable tasks (agent-pull dispatch).** Task cards live in the ledger with a state machine and an audit trail; `openfde context <task>` assembles the ammunition pack — constraints first, related memory after, everything cited.
 - **A markdown-first, Obsidian-style workspace.** `openfde serve` opens a local UI where every entity, episode, and task is a markdown note — hierarchy tree, [[wiki-links]] between entities, citations inline — with a force-directed graph as a companion view (click a node to open its note).
-- **An executive report for the customer's boss.** `/report` renders a light, printable page answering four questions from the graph: what we can take over, how much load it removes, what gets replaced, and what it's worth — with quantification questions auto-generated where the numbers are still missing.
+- **An executive report for the customer's boss — live.** `/report` renders a light, printable page answering four questions from the graph: what we can take over, how much load it removes, what gets replaced, and what it's worth — with quantification questions auto-generated where the numbers are still missing. `openfde share` hands out a read-only LAN link that updates in real time as agents work, including a live progress feed.
 
   ![openfde executive report](./docs/report-ui.png)
 
@@ -67,6 +67,7 @@ pnpm openfde serve                          # workspace at :4517, printable repo
 | `openfde report` | Executive engagement report: opportunities, load relief, automation coverage, value — every claim cited |
 | `openfde status` | Memory overview for the current engagement |
 | `openfde serve` | Local notes + graph workspace, plus a printable executive report at `/report` (optional daemon — the CLI works without it) |
+| `openfde share` | Share a live, read-only executive report on your LAN via an unguessable link — the boss watches progress in real time; everything else stays loopback-only |
 
 ## Agent integration
 

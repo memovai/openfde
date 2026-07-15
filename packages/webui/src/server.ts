@@ -11,6 +11,7 @@ import {
   resolveEngagement,
   resolveEntityByName,
   taskNote,
+  type Ledger,
 } from "@openfde/core";
 import { reportPage } from "./report-page.js";
 
@@ -45,9 +46,7 @@ function loadGraph(slug: string, includeExpired: boolean) {
   const db = openLedger(slug);
   try {
     const nodes = db
-      .prepare(
-        `SELECT id, type, name, summary, trust FROM entities WHERE expired_at IS NULL`,
-      )
+      .prepare(`SELECT id, type, name, summary, trust FROM entities WHERE expired_at IS NULL`)
       .all() as Omit<GraphNode, "degree">[];
 
     const expiredFilter = includeExpired ? "" : "AND f.expired_at IS NULL";
@@ -69,33 +68,6 @@ function loadGraph(slug: string, includeExpired: boolean) {
       nodes: nodes.map((n) => ({ ...n, degree: degree.get(n.id) ?? 0 })),
       links: links.map(({ expiredAt, ...link }) => ({ ...link, expired: expiredAt !== null })),
     };
-  } finally {
-    db.close();
-  }
-}
-
-function loadEntity(slug: string, entityId: string) {
-  const db = openLedger(slug);
-  try {
-    const entity = db
-      .prepare(`SELECT id, type, name, summary, trust FROM entities WHERE id = ?`)
-      .get(entityId);
-    if (!entity) return null;
-    const facts = db
-      .prepare(
-        `SELECT f.id AS factId, f.statement, f.predicate, f.quote,
-                f.valid_from AS validFrom, f.expired_at AS expiredAt, f.invalidated_by AS invalidatedBy,
-                s.name AS subject, o.name AS object,
-                e.source_uri AS sourceUri, e.speaker, e.occurred_at AS occurredAt
-         FROM facts f
-         JOIN entities s ON s.id = f.subject_id
-         LEFT JOIN entities o ON o.id = f.object_id
-         JOIN episodes e ON e.id = f.episode_id
-         WHERE f.subject_id = ? OR f.object_id = ?
-         ORDER BY f.expired_at IS NOT NULL, f.created_at DESC`,
-      )
-      .all(entityId, entityId);
-    return { entity, facts };
   } finally {
     db.close();
   }
@@ -133,29 +105,153 @@ function search(slug: string, query: string) {
     const entityIds =
       names.size === 0
         ? []
-        : (db
-            .prepare(
-              `SELECT id FROM entities WHERE name IN (${[...names].map(() => "?").join(",")})`,
-            )
-            .all(...names) as { id: string }[]).map((r) => r.id);
+        : (
+            db
+              .prepare(
+                `SELECT id FROM entities WHERE name IN (${[...names].map(() => "?").join(",")})`,
+              )
+              .all(...names) as { id: string }[]
+          ).map((r) => r.id);
     return { hits, entityIds };
   } finally {
     db.close();
   }
 }
 
+/* ---------------- live updates (SSE) ----------------
+   CLI and agents write the ledger from other processes; SQLite's
+   data_version pragma changes whenever another connection commits,
+   so a per-engagement watcher connection polls it and broadcasts. */
+
+interface Watcher {
+  db: Ledger;
+  version: number;
+  clients: Set<ServerResponse>;
+  timer: NodeJS.Timeout;
+}
+
+const watchers = new Map<string, Watcher>();
+
+function dataVersion(db: Ledger): number {
+  return (db.prepare("PRAGMA data_version").get() as { data_version: number }).data_version;
+}
+
+function subscribe(slug: string, res: ServerResponse): void {
+  let watcher = watchers.get(slug);
+  if (!watcher) {
+    const db = openLedger(slug);
+    watcher = {
+      db,
+      version: dataVersion(db),
+      clients: new Set(),
+      timer: setInterval(() => {
+        const w = watchers.get(slug);
+        if (!w) return;
+        const next = dataVersion(w.db);
+        if (next !== w.version) {
+          w.version = next;
+          for (const client of w.clients) client.write(`data: {"type":"update"}\n\n`);
+        } else {
+          for (const client of w.clients) client.write(`: ping\n\n`);
+        }
+      }, 1500),
+    };
+    watcher.timer.unref();
+    watchers.set(slug, watcher);
+  }
+
+  res.writeHead(200, {
+    "content-type": "text/event-stream",
+    "cache-control": "no-store",
+    connection: "keep-alive",
+  });
+  res.write(`data: {"type":"hello"}\n\n`);
+  watcher.clients.add(res);
+  res.on("close", () => {
+    const w = watchers.get(slug);
+    if (!w) return;
+    w.clients.delete(res);
+    if (w.clients.size === 0) {
+      clearInterval(w.timer);
+      w.db.close();
+      watchers.delete(slug);
+    }
+  });
+}
+
+/* ---------------- server ---------------- */
+
+export interface ShareOptions {
+  /** Unguessable URL segment; the share link is /s/<token>/report */
+  token: string;
+  /** The single engagement this share link exposes */
+  engagement: string;
+}
+
 export interface ServeOptions {
   port: number;
+  /** Defaults to loopback; `openfde share` binds 0.0.0.0 */
+  host?: string;
+  share?: ShareOptions;
 }
+
+const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
 
 export function serve(options: ServeOptions): void {
   const html = readFileSync(new URL("./index.html", import.meta.url), "utf8");
+  const host = options.host ?? "127.0.0.1";
+  const share = options.share;
 
   const server = createServer((req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url ?? "/", `http://localhost:${options.port}`);
     const engagementParam = url.searchParams.get("engagement") ?? undefined;
+    const isLocal = LOOPBACK.has(req.socket.remoteAddress ?? "");
 
     try {
+      /* ----- share surface: the ONLY routes reachable from other machines ----- */
+      if (share && url.pathname.startsWith(`/s/${share.token}/`)) {
+        const sub = url.pathname.slice(`/s/${share.token}`.length);
+        const base = `/s/${share.token}`;
+        switch (sub) {
+          case "/report": {
+            const db = openLedger(share.engagement);
+            try {
+              const page = reportPage(buildReport(db, share.engagement), {
+                live: true,
+                basePath: base,
+              });
+              res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+              res.end(page);
+            } finally {
+              db.close();
+            }
+            return;
+          }
+          case "/api/report": {
+            const db = openLedger(share.engagement);
+            try {
+              json(res, buildReport(db, share.engagement));
+            } finally {
+              db.close();
+            }
+            return;
+          }
+          case "/api/events": {
+            subscribe(share.engagement, res);
+            return;
+          }
+          default:
+            json(res, { error: "not found" }, 404);
+            return;
+        }
+      }
+
+      /* ----- workspace surface: loopback only ----- */
+      if (!isLocal) {
+        json(res, { error: "not found" }, 404);
+        return;
+      }
+
       switch (url.pathname) {
         case "/": {
           res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
@@ -166,9 +262,9 @@ export function serve(options: ServeOptions): void {
           const slug = resolveEngagement(engagementParam);
           const db = openLedger(slug);
           try {
-            const html = reportPage(buildReport(db, slug));
+            const page = reportPage(buildReport(db, slug), { live: true, basePath: "" });
             res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-            res.end(html);
+            res.end(page);
           } finally {
             db.close();
           }
@@ -182,6 +278,10 @@ export function serve(options: ServeOptions): void {
           } finally {
             db.close();
           }
+          return;
+        }
+        case "/api/events": {
+          subscribe(resolveEngagement(engagementParam), res);
           return;
         }
         case "/api/engagements": {
@@ -201,14 +301,6 @@ export function serve(options: ServeOptions): void {
         case "/api/graph": {
           const includeExpired = url.searchParams.get("expired") === "1";
           json(res, loadGraph(resolveEngagement(engagementParam), includeExpired));
-          return;
-        }
-        case "/api/entity": {
-          const id = url.searchParams.get("id");
-          if (!id) return json(res, { error: "missing id" }, 400);
-          const detail = loadEntity(resolveEngagement(engagementParam), id);
-          if (!detail) return json(res, { error: "not found" }, 404);
-          json(res, detail);
           return;
         }
         case "/api/tree": {
@@ -254,8 +346,13 @@ export function serve(options: ServeOptions): void {
     }
   });
 
-  server.listen(options.port, "127.0.0.1", () => {
-    console.log(`openfde graph UI: http://localhost:${options.port}`);
-    console.log("Local only (127.0.0.1). Ctrl+C to stop.");
+  server.listen(options.port, host, () => {
+    console.log(`openfde workspace: http://localhost:${options.port}`);
+    if (share) {
+      console.log(`live report (share): /s/${share.token}/report`);
+      console.log("Anyone on your network with this link sees the report only — nothing else.");
+    } else {
+      console.log("Local only (127.0.0.1). Ctrl+C to stop.");
+    }
   });
 }

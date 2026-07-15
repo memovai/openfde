@@ -31,6 +31,17 @@ export interface AutomationReport {
   evidence: Evidence[];
 }
 
+/** One line of the live progress feed: a task event with its task title */
+export interface ActivityEntry {
+  at: string;
+  taskTitle: string;
+  kind: "created" | "status" | "note";
+  fromStatus: string | null;
+  toStatus: string | null;
+  note: string | null;
+  actor: string | null;
+}
+
 export interface ReportData {
   engagement: string;
   generatedAt: string;
@@ -50,6 +61,7 @@ export interface ReportData {
     inFlight: TaskRow[];
     proposed: TaskRow[];
   };
+  activity: ActivityEntry[];
   quantifyQuestions: string[];
 }
 
@@ -147,6 +159,15 @@ export function buildReport(db: Ledger, engagement: string): ReportData {
       .all() as { speaker: string }[]
   ).map((r) => r.speaker);
 
+  const activity = db
+    .prepare(
+      `SELECT e.at, t.title AS taskTitle, e.kind, e.from_status AS fromStatus,
+              e.to_status AS toStatus, e.note, e.actor
+       FROM task_events e JOIN tasks t ON t.id = e.task_id
+       ORDER BY e.at DESC LIMIT 12`,
+    )
+    .all() as ActivityEntry[];
+
   const quantifyQuestions = painPoints
     .filter((p) => !p.quantified)
     .map(
@@ -168,6 +189,7 @@ export function buildReport(db: Ledger, engagement: string): ReportData {
     automations,
     constraints,
     tasks,
+    activity,
     quantifyQuestions,
   };
 }

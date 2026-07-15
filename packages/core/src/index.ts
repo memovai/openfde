@@ -71,6 +71,7 @@ export {
   type ReportData,
   type PainPointReport,
   type AutomationReport,
+  type ActivityEntry,
   type Evidence,
 } from "./report/build.js";
 export { reportMarkdown } from "./report/markdown.js";

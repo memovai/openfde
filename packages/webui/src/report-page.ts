@@ -1,5 +1,12 @@
 import type { Evidence, ReportData } from "@openfde/core";
 
+export interface ReportPageOptions {
+  /** Wire up SSE auto-refresh (LIVE badge, progress feed updates) */
+  live?: boolean;
+  /** "" for the local workspace, "/s/<token>" for share links */
+  basePath?: string;
+}
+
 /**
  * The boss-facing page (DESIGN 4.10): light, calm, printable. Deliberately
  * not the engineer UI — this is what an FDE puts on a projector or exports
@@ -26,7 +33,7 @@ function evidenceHtml(evidence: Evidence[], max = 3): string {
     .join("");
 }
 
-export function reportPage(report: ReportData): string {
+export function reportPage(report: ReportData, opts: ReportPageOptions = {}): string {
   const c = report.coverage;
   const pipeline = Object.entries(report.tasks.byStatus)
     .map(([s, n]) => `<span class="pill">${n} ${esc(s)}</span>`)
@@ -75,6 +82,55 @@ export function reportPage(report: ReportData): string {
         : ""
       : `<p>To turn this into a hard number, we need answers to:</p>
          <ul>${report.quantifyQuestions.map((q) => `<li>${esc(q)}</li>`).join("")}</ul>`;
+
+  const activity =
+    report.activity.length === 0
+      ? ""
+      : `<div class="card"><div class="card-head"><h3>Live progress</h3></div>
+         <ul class="plain feed">${report.activity
+           .map((a) => {
+             const what =
+               a.kind === "status"
+                 ? `<code>${esc(a.fromStatus)}</code> → <code>${esc(a.toStatus)}</code>`
+                 : a.kind === "created"
+                   ? "created"
+                   : "note";
+             return `<li><span class="t">${esc(a.at.slice(5, 16).replace("T", " "))}</span>
+               <strong>${esc(a.taskTitle)}</strong> · ${what}${a.actor ? ` <span class="who-inline">by ${esc(a.actor)}</span>` : ""}${a.note ? `<div class="who">${esc(a.note)}</div>` : ""}</li>`;
+           })
+           .join("")}</ul></div>`;
+
+  const liveScript = !opts.live
+    ? ""
+    : `<script>
+(function () {
+  var base = ${JSON.stringify(opts.basePath ?? "")};
+  var engagement = ${JSON.stringify(report.engagement)};
+  var es = new EventSource(base + "/api/events?engagement=" + encodeURIComponent(engagement));
+  var badge = document.getElementById("live-badge");
+  var stamp = document.getElementById("live-stamp");
+  es.onopen = function () { if (badge) badge.classList.add("on"); };
+  es.onerror = function () { if (badge) badge.classList.remove("on"); };
+  es.onmessage = function (ev) {
+    var msg = {};
+    try { msg = JSON.parse(ev.data); } catch (e) { return; }
+    if (msg.type !== "update") return;
+    fetch(location.href, { cache: "no-store" })
+      .then(function (r) { return r.text(); })
+      .then(function (html) {
+        var doc = new DOMParser().parseFromString(html, "text/html");
+        var next = doc.querySelector("main");
+        var current = document.querySelector("main");
+        if (next && current) {
+          var y = window.scrollY;
+          current.replaceWith(next);
+          window.scrollTo(0, y);
+          if (stamp) stamp.textContent = "updated " + new Date().toLocaleTimeString();
+        }
+      });
+  };
+})();
+</script>`;
 
   return `<!doctype html>
 <html lang="en">
@@ -153,6 +209,19 @@ export function reportPage(report: ReportData): string {
     padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
     box-shadow: 0 2px 8px rgba(91,75,196,0.3);
   }
+  .live { color: var(--faint); font-weight: 700; font-size: 12px; letter-spacing: 0.04em; }
+  .live .dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--faint); margin-right: 5px; vertical-align: 1px;
+  }
+  .live.on { color: var(--ok); }
+  .live.on .dot { background: var(--ok); animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  #live-stamp { font-size: 12px; color: var(--faint); }
+  .feed li { border-bottom: 1px dashed var(--line); padding: 6px 0; }
+  .feed li:last-child { border-bottom: none; }
+  .feed .t { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--faint); margin-right: 8px; }
+  .who-inline { color: var(--muted); font-size: 12px; }
   @media print {
     #print-btn { display: none; }
     body { background: white; }
@@ -166,7 +235,11 @@ export function reportPage(report: ReportData): string {
 <main>
   <header class="rpt">
     <h1>Engagement report</h1>
-    <div class="sub">${esc(report.engagement)} · generated ${esc(report.generatedAt.slice(0, 10))} · every claim cites its source</div>
+    <div class="sub">${esc(report.engagement)} · generated ${esc(report.generatedAt.slice(0, 10))} · every claim cites its source${
+      opts.live
+        ? ` · <span id="live-badge" class="live"><span class="dot"></span>LIVE</span> <span id="live-stamp"></span>`
+        : ""
+    }</div>
     <div class="stats">
       <div class="stat"><div class="num">${c.episodes}</div><div class="lbl">sessions</div></div>
       <div class="stat"><div class="num">${c.activeFacts}</div><div class="lbl">verified facts</div></div>
@@ -213,6 +286,7 @@ export function reportPage(report: ReportData): string {
       <div class="card-head"><h3>Task pipeline</h3></div>
       <div style="margin-top:8px">${pipeline || '<span class="empty">empty</span>'}</div>
     </div>
+    ${activity}
     ${
       report.constraints.length
         ? `<div class="card"><div class="card-head"><h3>Constraints we will respect</h3></div><ul class="plain">${report.constraints
@@ -227,6 +301,7 @@ export function reportPage(report: ReportData): string {
     Generated by openfde from the engagement memory. Numbers are only claimed where sources contain them; superseded facts are excluded.
   </footer>
 </main>
+${liveScript}
 </body>
 </html>`;
 }
