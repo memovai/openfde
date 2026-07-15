@@ -1,5 +1,5 @@
-import type { Ledger } from "@openfde/core";
-import { getTask, listTasks, taskEvents, TASK_STATUSES } from "@openfde/core";
+import type { Ledger } from "../ledger/database.js";
+import { getTask, listTasks, taskEvents, TASK_STATUSES } from "../dispatch/tasks.js";
 
 /**
  * Notes are read-only markdown projections of the ledger (DESIGN 4.9).

@@ -26,6 +26,9 @@ importers:
       '@openfde/ontology':
         specifier: workspace:*
         version: link:../../packages/ontology
+      '@openfde/webui':
+        specifier: workspace:*
+        version: link:../../packages/webui
       better-sqlite3:
         specifier: ^12.4.0
         version: 12.11.1
@@ -64,6 +67,12 @@ importers:
       zod:
         specifier: ^4.1.0
         version: 4.4.3
+
+  packages/webui:
+    dependencies:
+      '@openfde/core':
+        specifier: workspace:*
+        version: link:../core
 
 packages:
 

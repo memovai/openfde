@@ -53,6 +53,18 @@ export {
   type TaskContext,
 } from "./dispatch/context.js";
 
+// projections (markdown views of the ledger — shared by webui and future export)
+export {
+  loadTree,
+  entityNote,
+  episodeNote,
+  taskNote,
+  resolveEntityByName,
+  type TreeSection,
+  type TreeGroup,
+  type TreeItem,
+} from "./projections/notes.js";
+
 // report
 export {
   buildReport,

@@ -74,7 +74,8 @@ Eso es todo — cualquier agent que ejecute comandos de shell puede usar la memo
 
 ```
 packages/ontology   Ontología del dominio FDE (Zod, fuente única de verdad)
-packages/core       Ledger: engagements / ingesta / extracción / resolución / búsqueda
+packages/core       Ledger: engagements / memoria / dispatch / proyecciones / informes
+packages/webui      Espacio de trabajo local opcional (notas + grafo + informe ejecutivo)
 apps/cli            El comando openfde (punto de entrada compartido para humanos y agents)
 ```
 

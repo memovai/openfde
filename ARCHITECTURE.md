@@ -40,10 +40,18 @@ packages/
       dispatch/             # agent-pull task coordination (Mode B)
         tasks.ts            #   task cards, state machine, audit events
         context.ts          #   context bundles: constraints + related memory
+      projections/          # markdown views of the ledger (shared by webui & export)
+        notes.ts            #   tree + entity/episode/task notes, [[wiki-links]]
       report/               # executive projections
         build.ts            #   derive the four boss questions from the ledger
         markdown.ts         #   markdown rendering
     test/                   # vitest suites, one per module (helpers.ts shared)
+
+  webui/                    # @openfde/webui — the optional local workspace
+    src/
+      server.ts             #   node:http API + routes (launched by `openfde serve`)
+      report-page.ts        #   printable executive report page
+      index.html            #   zero-dependency workspace UI (notes + graph)
 
 apps/
   cli/                      # the `openfde` command
@@ -52,11 +60,6 @@ apps/
       commands/             #   one file per verb (engagement, ingest, extract,
                             #   recall, remember, task, context, report, status, serve)
       lib/helpers.ts        #   fail / withLedger / actorName
-      serve/                #   optional local daemon
-        server.ts           #   node:http API + routes
-        notes.ts            #   markdown projections (tree, entity/episode/task notes)
-        report-page.ts      #   printable executive report page
-        index.html          #   zero-dependency workspace UI (notes + graph)
 ```
 
 ## Where future work lands
@@ -67,7 +70,7 @@ apps/
 | Asset library (prompts, rubrics, eval datasets, skills) | `packages/core/src/assets/` | git-repo-backed, engagement→team promotion behind a desensitization gate |
 | Eval execution (rubric scoring of `review` tasks) | `packages/core/src/eval/` | consumes rubric assets, writes scores back; Langfuse optional backend |
 | Orchestrated dispatch runner (Mode A) | `packages/core/src/dispatch/runner/` | optional daemon spawning agents on `ready` tasks in git worktrees; same task table |
-| Vault export of markdown notes | `apps/cli/src/commands/export.ts` | reuse `serve/notes.ts` projections |
+| Vault export of markdown notes | `apps/cli/src/commands/export.ts` | reuse `core/src/projections/` |
 | Embedding recall (sqlite-vec) | `packages/core/src/ledger/` | additive to `recall.ts`; interface unchanged |
 
 ## Invariants worth keeping
@@ -76,5 +79,5 @@ apps/
 2. **Provenance is a schema constraint.** Nothing enters the ledger without a `source_uri`; every projection carries citations.
 3. **Facts supersede, never delete.** Bi-temporal columns power handoff timelines and audits.
 4. **No LLM on the read path.** Recall, context bundles, notes, and reports are deterministic ledger projections; LLMs act only on the write path, constrained by the ontology.
-5. **The CLI is the API.** Anything an agent needs must be reachable as a CLI verb with `--json`; the web UI never grows capabilities the CLI lacks.
+5. **The CLI is the API.** Anything an agent needs must be reachable as a CLI verb with `--json`; `@openfde/webui` renders projections and never grows capabilities the CLI lacks.
 6. **Engagements are directories.** Isolation, handoff, backup, and deletion are filesystem operations.

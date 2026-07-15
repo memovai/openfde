@@ -1,3 +1,5 @@
+import { copyFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { defineConfig } from "tsup";
 
 export default defineConfig({
@@ -6,8 +8,13 @@ export default defineConfig({
   clean: true,
   banner: { js: "#!/usr/bin/env node" },
   // bundle workspace packages into the artifact; keep native deps external
-  noExternal: ["@openfde/core", "@openfde/ontology"],
+  noExternal: ["@openfde/core", "@openfde/ontology", "@openfde/webui"],
   external: ["better-sqlite3"],
-  // the graph UI ships as a static file next to the bundle
-  onSuccess: "cp src/serve/index.html dist/",
+  // the workspace UI ships as a static file next to the bundle
+  async onSuccess() {
+    await copyFile(
+      resolve(__dirname, "../../packages/webui/src/index.html"),
+      resolve(__dirname, "dist/index.html"),
+    );
+  },
 });

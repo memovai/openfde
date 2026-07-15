@@ -74,7 +74,8 @@ That's it — any agent that can run shell commands can use FDE memory. No proto
 
 ```
 packages/ontology   FDE domain ontology (Zod, single source of truth)
-packages/core       Ledger: engagements / ingest / extract / resolve / recall
+packages/core       Ledger: engagements / memory / dispatch / projections / reports
+packages/webui      Optional local workspace (notes + graph + executive report)
 apps/cli            The openfde command (shared entry point for humans and agents)
 ```
 

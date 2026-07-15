@@ -1,7 +1,7 @@
 import type { Command } from "commander";
 import { resolveEngagement } from "@openfde/core";
 import { fail } from "../lib/helpers.js";
-import { serve } from "../serve/server.js";
+import { serve } from "@openfde/webui";
 
 export function registerServe(program: Command): void {
   program

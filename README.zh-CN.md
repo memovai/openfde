@@ -74,7 +74,8 @@ pnpm openfde serve                 # 图谱界面 http://localhost:4517
 
 ```
 packages/ontology   FDE 领域本体（Zod，单一事实源）
-packages/core       Ledger：engagement / 摄取 / 抽取 / 消解 / 检索
+packages/core       Ledger：engagement / 记忆 / 派发 / 投影 / 报告
+packages/webui      可选本地工作区（笔记 + 图谱 + 高管报告）
 apps/cli            openfde 命令（人和 agent 共用入口）
 ```
 

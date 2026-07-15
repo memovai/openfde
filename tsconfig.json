@@ -7,7 +7,8 @@
     "types": ["node"],
     "paths": {
       "@openfde/ontology": ["./packages/ontology/src/index.ts"],
-      "@openfde/core": ["./packages/core/src/index.ts"]
+      "@openfde/core": ["./packages/core/src/index.ts"],
+      "@openfde/webui": ["./packages/webui/src/index.ts"]
     }
   },
   "include": ["packages/*/src/**/*.ts", "packages/*/test/**/*.ts", "apps/*/src/**/*.ts"]

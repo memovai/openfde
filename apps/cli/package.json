@@ -13,6 +13,7 @@
   "dependencies": {
     "@openfde/core": "workspace:*",
     "@openfde/ontology": "workspace:*",
+    "@openfde/webui": "workspace:*",
     "better-sqlite3": "^12.4.0",
     "commander": "^13.0.0"
   },

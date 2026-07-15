@@ -74,7 +74,8 @@ pnpm openfde serve                 # グラフ UI: http://localhost:4517
 
 ```
 packages/ontology   FDE ドメインオントロジー（Zod、単一の情報源）
-packages/core       Ledger：エンゲージメント / 取り込み / 抽出 / 解決 / 検索
+packages/core       Ledger：エンゲージメント / メモリ / ディスパッチ / プロジェクション / レポート
+packages/webui      任意のローカルワークスペース（ノート + グラフ + 経営層向けレポート）
 apps/cli            openfde コマンド（人間と agent の共通エントリポイント）
 ```
 
