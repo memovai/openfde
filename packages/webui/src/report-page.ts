@@ -71,7 +71,7 @@ export function reportPage(report: ReportData, opts: ReportPageOptions = {}): st
           .join("") +
         (report.tasks.delivered.length
           ? `<div class="card"><div class="card-head"><h3>Delivered &amp; accepted</h3></div><ul class="plain">${report.tasks.delivered
-              .map((t) => `<li>${esc(t.title)}</li>`)
+              .map((t) => `<li>${esc(t.title)}${t.outcome ? `<div class="who">outcome: ${esc(t.outcome)}</div>` : ""}</li>`)
               .join("")}</ul></div>`
           : "");
 

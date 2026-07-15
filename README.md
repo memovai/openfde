@@ -32,6 +32,7 @@ OpenFDE turns all three into one system, starting with memory.
 - **Bi-temporal memory.** Contradicting facts supersede rather than delete. `recall --mode handoff` replays the timeline — including what you believed before and what replaced it.
 - **No LLM on the read path.** Full-text search (with CJK-aware segmentation) plus one-hop graph expansion, in milliseconds. The LLM only works on the write path, constrained by a fixed domain ontology.
 - **Agent-native.** Every command supports `--json`. Add a few lines to your agent's instructions and it can query memory, claim tasks, and write findings back mid-task.
+- **A field toolkit for the FDE motion.** Web research with citations (`research`), next-day demo briefs (`demo`), rubric-based acceptance judging (`eval`), a git-ready asset library (`asset`), and a data negotiation map (`datamap`).
 - **Traceable tasks (agent-pull dispatch).** Task cards live in the ledger with a state machine and an audit trail; `openfde context <task>` assembles the ammunition pack — constraints first, related memory after, everything cited.
 - **A markdown-first, Obsidian-style workspace.** `openfde serve` opens a local UI where every entity, episode, and task is a markdown note — hierarchy tree, [[wiki-links]] between entities, citations inline — with a force-directed graph as a companion view (click a node to open its note).
 - **An executive report for the customer's boss — live.** `/report` renders a light, printable page answering four questions from the graph: what we can take over, how much load it removes, what gets replaced, and what it's worth — with quantification questions auto-generated where the numbers are still missing. `openfde share` hands out a read-only LAN link that updates in real time as agents work, including a live progress feed.
@@ -71,6 +72,11 @@ pnpm openfde serve                          # workspace at :4517, printable repo
 | `openfde remember <fact> --source <uri>` | Record knowledge discovered mid-task (agent write-back) |
 | `openfde task create/list/claim/start/done/accept` | Traceable task cards with a state machine and audit trail (agent-pull dispatch) |
 | `openfde context <task>` | Assemble the memory ammunition pack for a task: constraints + related facts, all cited |
+| `openfde research <query>` | Web-search for methods with cited sources; `--save` ingests findings into memory |
+| `openfde demo <topic>` | Demo brief from memory — the customer's pain, vocabulary, constraints, and data shapes, ready for a coding agent ("the demo is the sales pitch") |
+| `openfde eval <task> --input <file>` | Judge submitted work against the task's rubric; verdicts land in the audit trail and grow the eval dataset |
+| `openfde asset add/list/show` | The asset library: rubrics (auto-created from task criteria), prompts, eval cases, demos, playbooks, skills — files, git-ready |
+| `openfde datamap` | The data negotiation map: who owns each data source, who trusts it, what depends on it |
 | `openfde interview` | Interview guide generated from graph gaps — top-down (value → flows → points, the boss session) or bottom-up (knowledge-mining leads) |
 | `openfde report` | Executive engagement report: opportunities, load relief, automation coverage, value — every claim cited |
 | `openfde status` | Memory overview for the current engagement |
@@ -113,5 +119,5 @@ pnpm -C apps/cli build    # bundle the CLI with the workspace UI
 ## Roadmap
 
 - **Dispatch, orchestrated mode** — agent-pull shipped (`openfde task` + `openfde context`); next is an optional runner that auto-spawns agents on `ready` tasks in isolated git worktrees
-- **Asset library with evals built in** — prompts, rubrics, and eval datasets are versioned assets; evaluation consumes rubric assets and feeds scores and new test cases back into the library
-- **Asset promotion** — patterns that survive an engagement get desensitized and promoted for reuse
+- **Asset promotion & leverage metrics** — the per-engagement library shipped (rubrics from task criteria, eval case datasets, demo briefs); next: desensitized promotion to a team repo and cross-engagement leverage metrics (contract size up, per-deploy effort down)
+- **Operational write-back** — record decision lineage today (`task accept --outcome`); tomorrow, close the action loop into customer systems

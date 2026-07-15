@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     CHECK (status IN ('draft','ready','claimed','running','review','accepted','rejected')),
   criteria TEXT,
   source_uri TEXT,
+  outcome TEXT,
   claimed_by TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
@@ -100,6 +101,7 @@ export function openLedger(slug: string): Ledger {
   for (const migration of [
     "ALTER TABLE episodes ADD COLUMN media_path TEXT",
     "ALTER TABLE episodes ADD COLUMN media_type TEXT",
+    "ALTER TABLE tasks ADD COLUMN outcome TEXT",
   ]) {
     try {
       db.exec(migration);

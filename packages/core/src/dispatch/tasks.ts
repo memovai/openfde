@@ -37,6 +37,8 @@ export interface TaskRow {
   criteria: string | null;
   source_uri: string | null;
   claimed_by: string | null;
+  /** Decision lineage: what actually happened once the work was accepted */
+  outcome: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -72,13 +74,14 @@ export function createTask(db: Ledger, input: CreateTaskInput): TaskRow {
     status: input.draft ? "draft" : "ready",
     criteria: input.criteria ?? null,
     source_uri: input.sourceUri ?? null,
+    outcome: null,
     claimed_by: null,
     created_at: now,
     updated_at: now,
   };
   db.prepare(
-    `INSERT INTO tasks (id, title, description, status, criteria, source_uri, claimed_by, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO tasks (id, title, description, status, criteria, source_uri, outcome, claimed_by, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     task.id,
     task.title,
@@ -86,6 +89,7 @@ export function createTask(db: Ledger, input: CreateTaskInput): TaskRow {
     task.status,
     task.criteria,
     task.source_uri,
+    task.outcome,
     task.claimed_by,
     task.created_at,
     task.updated_at,
@@ -136,6 +140,8 @@ export function listTasks(db: Ledger, options: { status?: TaskStatus } = {}): Ta
 export interface TransitionOptions {
   actor?: string;
   note?: string;
+  /** Recorded on acceptance: the observed result (decision lineage) */
+  outcome?: string;
 }
 
 export function transitionTask(
@@ -153,12 +159,9 @@ export function transitionTask(
   }
   const claimedBy =
     to === "claimed" ? (options.actor ?? "unknown") : to === "ready" ? null : task.claimed_by;
-  db.prepare(`UPDATE tasks SET status = ?, claimed_by = ?, updated_at = ? WHERE id = ?`).run(
-    to,
-    claimedBy,
-    nowIso(),
-    id,
-  );
+  db.prepare(
+    `UPDATE tasks SET status = ?, claimed_by = ?, outcome = coalesce(?, outcome), updated_at = ? WHERE id = ?`,
+  ).run(to, claimedBy, options.outcome ?? null, nowIso(), id);
   logEvent(db, id, {
     kind: "status",
     from: task.status,

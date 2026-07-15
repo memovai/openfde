@@ -60,7 +60,9 @@ export function reportMarkdown(report: ReportData): string {
   }
   if (report.tasks.delivered.length > 0) {
     md.push("", "Delivered and accepted:");
-    for (const t of report.tasks.delivered) md.push(`- ${t.title}`);
+    for (const t of report.tasks.delivered) {
+      md.push(`- ${t.title}${t.outcome ? ` — outcome: ${t.outcome}` : ""}`);
+    }
   }
 
   md.push("", "## 4. Value and next steps", "");

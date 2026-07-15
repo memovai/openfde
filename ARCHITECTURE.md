@@ -40,10 +40,19 @@ packages/
       dispatch/             # agent-pull task coordination (Mode B)
         tasks.ts            #   task cards, state machine, audit events
         context.ts          #   context bundles: constraints + related memory
+      assets/               # the asset library: files, git-ready
+        store.ts            #   rubrics/prompts/eval cases/demos/playbooks/skills
+      eval/                 # acceptance judging against rubric assets
+        judge.ts            #   Judge interface, Claude judge, deterministic mock
+      demo/                 # demo-driven deployment
+        brief.ts            #   demo ammunition packs (pain, vocabulary, constraints, data)
+      research/             # web research for methods
+        web.ts              #   Claude server-side web search, cited findings
       interview/            # dot-line-plane interview guides from graph gaps
         guide.ts            #   top-down (value->flows->points) and bottom-up (mining leads)
       projections/          # markdown views of the ledger (shared by webui & export)
         notes.ts            #   tree + entity/episode/task notes, [[wiki-links]]
+        datamap.ts          #   the data negotiation map (owners / trust / dependents)
       report/               # executive projections
         build.ts            #   derive the four boss questions from the ledger
         markdown.ts         #   markdown rendering
@@ -69,8 +78,8 @@ apps/
 | Planned module | Home | Notes |
 | --- | --- | --- |
 | Ingestion connectors (Slack/Teams exports) | `packages/core/src/ingestion/` | parsers normalize sources into `IngestInput`; PDFs/images already ship via Claude-native blocks; MinerU stays an isolated external service |
-| Asset library (prompts, rubrics, eval datasets, skills) | `packages/core/src/assets/` | git-repo-backed, engagement→team promotion behind a desensitization gate |
-| Eval execution (rubric scoring of `review` tasks) | `packages/core/src/eval/` | consumes rubric assets, writes scores back; Langfuse optional backend |
+| Asset promotion (engagement → team repo) | `packages/core/src/assets/` | shipped per-engagement; promotion goes behind a desensitization gate + cross-engagement leverage metrics |
+| Eval backends (Langfuse sync) | `packages/core/src/eval/` | judging shipped; optional observability backend remains |
 | Orchestrated dispatch runner (Mode A) | `packages/core/src/dispatch/runner/` | optional daemon spawning agents on `ready` tasks in git worktrees; same task table |
 | Vault export of markdown notes | `apps/cli/src/commands/export.ts` | reuse `core/src/projections/` |
 | Embedding recall (sqlite-vec) | `packages/core/src/ledger/` | additive to `recall.ts`; interface unchanged |

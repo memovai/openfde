@@ -32,6 +32,7 @@ OpenFDE convierte las tres cosas en un solo sistema, empezando por la memoria.
 - **Memoria bitemporal.** Los hechos contradictorios se reemplazan, nunca se borran. `recall --mode handoff` reproduce la línea temporal — incluyendo lo que creías antes y qué lo sustituyó.
 - **Sin LLM en la ruta de lectura.** Búsqueda de texto completo (con segmentación CJK) más expansión de grafo a un salto, en milisegundos. El LLM solo trabaja en la escritura, restringido por una ontología de dominio fija.
 - **Nativo para agents.** Todos los comandos soportan `--json`. Añade unas líneas a las instrucciones de tu agent y podrá consultar la memoria, reclamar tareas y devolver hallazgos en plena tarea.
+- **Un kit de campo para el movimiento FDE.** Investigación web con citas (`research`), briefs de demo para el día siguiente (`demo`), evaluación de aceptación por rúbrica (`eval`), biblioteca de activos lista para git (`asset`) y mapa de negociación de datos (`datamap`).
 - **Tareas trazables (dispatch agent-pull).** Las tarjetas de tarea viven en el ledger con una máquina de estados y un registro de auditoría; `openfde context <task>` ensambla el paquete de munición — restricciones primero, memoria relacionada después, todo citado.
 - **Un espacio de trabajo markdown-first al estilo Obsidian.** `openfde serve` abre una interfaz local donde cada entidad, episodio y tarea es una nota markdown — árbol jerárquico, [[wiki-enlaces]] entre entidades, citas en línea — con un grafo de fuerzas dirigidas como vista complementaria (haz clic en un nodo para abrir su nota).
 - **Un informe ejecutivo para el jefe del cliente — en vivo.** `/report` genera una página clara e imprimible que responde cuatro preguntas desde el grafo: qué podemos asumir, cuánta carga elimina, qué se reemplaza y cuánto vale — con preguntas de cuantificación generadas automáticamente donde aún faltan números. `openfde share` reparte un enlace LAN de solo lectura que se actualiza en tiempo real mientras los agents trabajan, con un feed de progreso en vivo.
@@ -71,6 +72,11 @@ pnpm openfde serve                 # espacio de trabajo en :4517, informe imprim
 | `openfde task create/list/claim/start/done/accept` | Tarjetas de tarea trazables: máquina de estados + registro de auditoría (dispatch agent-pull) |
 | `openfde context <task>` | Ensambla el paquete de memoria de una tarea: restricciones + hechos relacionados, todo citado |
 | `openfde status` | Resumen de memoria del engagement actual |
+| `openfde research <query>` | Búsqueda web de métodos con fuentes citadas; `--save` ingiere los hallazgos en la memoria |
+| `openfde demo <topic>` | Brief de demo desde la memoria — el dolor del cliente, su vocabulario, restricciones y formas de datos, listo para un coding agent ("la demo es la venta") |
+| `openfde eval <task> --input <file>` | Juzga el trabajo entregado contra la rúbrica de la tarea; los veredictos van al registro de auditoría y hacen crecer el dataset de evals |
+| `openfde asset add/list/show` | La biblioteca de activos: rúbricas (auto-creadas desde los criterios de la tarea), prompts, casos de eval, demos, playbooks, skills — archivos, listos para git |
+| `openfde datamap` | El mapa de negociación de datos: quién posee cada fuente, quién confía en ella, qué depende de ella |
 | `openfde interview` | Guía de entrevista generada desde los huecos del grafo — top-down (valor → flujos → puntos de decisión, la sesión con el jefe) o bottom-up (pistas de minería de conocimiento) |
 | `openfde report` | Informe ejecutivo del engagement: oportunidades, alivio de carga, cobertura de automatización, valor — cada afirmación citada |
 | `openfde serve` | Espacio de trabajo local de notas + grafo, con un informe ejecutivo imprimible en `/report` (daemon opcional — la CLI funciona sin él) |
@@ -112,5 +118,5 @@ pnpm -C apps/cli build    # empaqueta la CLI con la interfaz del espacio de trab
 ## Hoja de ruta
 
 - **Dispatch, modo orchestrated** — agent-pull ya disponible (`openfde task` + `openfde context`); lo siguiente es un runner opcional que lanza agents automáticamente sobre tareas `ready` en git worktrees aislados
-- **Biblioteca de activos con evals integrados** — prompts, rúbricas y datasets de eval son activos versionados; la evaluación consume rúbricas y devuelve puntuaciones y nuevos casos de prueba a la biblioteca
-- **Promoción de activos** — los patrones que sobreviven a un engagement se anonimizan y promueven para su reutilización
+- **Promoción de activos y métricas de apalancamiento** — la biblioteca por engagement ya está (rúbricas desde criterios de tarea, datasets de casos de eval, briefs de demo); siguiente: promoción anonimizada a un repositorio de equipo + métricas entre engagements (contrato al alza, esfuerzo por despliegue a la baja)
+- **Write-back operacional** — hoy se registra el linaje de decisiones (`task accept --outcome`); mañana, cerrar el bucle de acción hacia los sistemas del cliente

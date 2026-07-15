@@ -54,6 +54,7 @@ export {
 } from "./dispatch/context.js";
 
 // projections (markdown views of the ledger — shared by webui and future export)
+export { buildDataMap, dataMapMarkdown, type DataSourceMap } from "./projections/datamap.js";
 export {
   loadTree,
   entityNote,
@@ -64,6 +65,37 @@ export {
   type TreeGroup,
   type TreeItem,
 } from "./projections/notes.js";
+
+// assets + eval (the library: rubrics, prompts, eval cases, demos)
+export {
+  addAsset,
+  listAssets,
+  readAsset,
+  appendEvalCase,
+  assetStats,
+  assetsDir,
+  ASSET_TYPES,
+  type AssetType,
+  type AssetRef,
+} from "./assets/store.js";
+export {
+  AnthropicJudge,
+  MockJudge,
+  verdictMarkdown,
+  Verdict,
+  type Judge,
+} from "./eval/judge.js";
+
+// demo briefs (demo-driven deployment)
+export { buildDemoBrief, demoBriefMarkdown, type DemoBrief } from "./demo/brief.js";
+
+// research (web search for methods)
+export {
+  WebResearcher,
+  researchMarkdown,
+  type ResearchResult,
+  type ResearchSource,
+} from "./research/web.js";
 
 // interview (dot-line-plane guided sessions)
 export {

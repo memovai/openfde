@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import {
+  addAsset,
   addTaskNote,
   createTask,
   getTask,
@@ -33,16 +34,21 @@ export function registerTask(program: Command): void {
       source?: string; draft?: boolean; json?: boolean;
     }) => {
       try {
-        const row = withLedger(options.engagement, (db) =>
-          createTask(db, {
+        const row = withLedger(options.engagement, (db, slug) => {
+          const task = createTask(db, {
             title: titleWords.join(" "),
             description: options.desc,
             criteria: options.criteria,
             sourceUri: options.source,
             draft: options.draft,
             actor: actorName(),
-          }),
-        );
+          });
+          // acceptance criteria are rubric assets from birth (DESIGN 4.4)
+          if (options.criteria) {
+            addAsset(slug, "rubric", task.title, `# Rubric: ${task.title}\n\ntask: ${task.id}\n\n${options.criteria}`);
+          }
+          return task;
+        });
         if (options.json) console.log(JSON.stringify(row));
         else console.log(`Created ${row.id} [${row.status}] ${row.title}`);
       } catch (error) {
@@ -124,11 +130,16 @@ export function registerTask(program: Command): void {
       .option("-e, --engagement <slug>", "target engagement (defaults to current)")
       .option("--by <actor>", "who is acting (default: $OPENFDE_ACTOR or $USER)")
       .option("--note <text>", "attach a note to the transition")
+      .option("--outcome <text>", "observed result (decision lineage; recorded on accept)")
       .option("--json", "JSON output")
-      .action((id: string, options: { engagement?: string; by?: string; note?: string; json?: boolean }) => {
+      .action((id: string, options: { engagement?: string; by?: string; note?: string; outcome?: string; json?: boolean }) => {
         try {
           const row = withLedger(options.engagement, (db) =>
-            transitionTask(db, id, to, { actor: actorName(options.by), note: options.note }),
+            transitionTask(db, id, to, {
+              actor: actorName(options.by),
+              note: options.note,
+              outcome: options.outcome,
+            }),
           );
           if (options.json) console.log(JSON.stringify(row));
           else console.log(`${row.id} -> [${row.status}]`);
