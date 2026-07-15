@@ -1,0 +1,17 @@
+# local-only design notes
+DESIGN.md
+
+# deps & build
+node_modules/
+dist/
+.turbo/
+
+# env & secrets
+.env
+.env.*
+!.env.example
+
+# logs & OS noise
+*.log
+.DS_Store
+.gstack/

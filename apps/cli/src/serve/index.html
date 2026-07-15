@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>openfde — engagement memory</title>
+<style>
+  :root {
+    --bg: #1e1e1e;
+    --bg-deep: #161616;
+    --bg-panel: #232323;
+    --bg-hover: #2a2a2a;
+    --bg-active: rgba(127, 109, 242, 0.14);
+    --border: #333333;
+    --text: #dcddde;
+    --text-muted: #909090;
+    --text-faint: #666666;
+    --accent: #7f6df2;
+    --accent-soft: rgba(127, 109, 242, 0.18);
+    --danger: #e05252;
+    --radius: 8px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+      "Hiragino Sans", "Noto Sans CJK SC", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    font-size: 13px;
+  }
+
+  /* ---------- sidebar ---------- */
+  #sidebar {
+    width: 280px; min-width: 280px; height: 100%;
+    background: var(--bg-deep);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 14px 12px 10px;
+    gap: 12px;
+  }
+  #brand { display: flex; align-items: baseline; gap: 8px; padding: 2px 4px; }
+  #brand .logo { font-size: 16px; font-weight: 700; letter-spacing: 0.02em; }
+  #brand .logo span { color: var(--accent); }
+  #brand .tag { font-size: 11px; color: var(--text-faint); }
+
+  select, input[type="search"] {
+    width: 100%;
+    background: var(--bg-panel); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 7px 10px; font-size: 13px; font-family: var(--font);
+    outline: none; appearance: none;
+  }
+  select:focus, input[type="search"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+  }
+  label.small {
+    display: block; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-faint); margin-bottom: 5px;
+  }
+
+  /* view switcher */
+  #views {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 3px;
+  }
+  #views button {
+    background: none; border: none; color: var(--text-muted);
+    font-family: var(--font); font-size: 12px; font-weight: 600;
+    padding: 6px 0; border-radius: 6px; cursor: pointer;
+  }
+  #views button.active { background: var(--accent-soft); color: var(--text); }
+  #views button:hover:not(.active) { background: var(--bg-hover); }
+
+  /* search results */
+  #results { display: none; flex-direction: column; gap: 2px; max-height: 30vh; overflow-y: auto; }
+  .result {
+    padding: 6px 8px; border-radius: 6px; cursor: pointer;
+    color: var(--text-muted); font-size: 12px; line-height: 1.4;
+  }
+  .result:hover { background: var(--bg-hover); color: var(--text); }
+  .result .who { color: var(--accent); font-family: var(--mono); font-size: 10px; }
+
+  /* tree (notes view) */
+  #tree { flex: 1; overflow-y: auto; display: none; }
+  .tree-section { margin-bottom: 6px; }
+  .tree-head {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 6px; cursor: pointer; user-select: none;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-faint); border-radius: 6px;
+  }
+  .tree-head:hover { background: var(--bg-hover); }
+  .tree-head .tw { transition: transform 0.12s; font-size: 8px; }
+  .tree-section.collapsed .tw { transform: rotate(-90deg); }
+  .tree-section.collapsed .tree-body { display: none; }
+  .tree-group { margin-left: 4px; }
+  .tree-group-head {
+    display: flex; align-items: center; gap: 7px;
+    padding: 3px 8px; cursor: pointer; user-select: none;
+    color: var(--text-muted); border-radius: 6px; font-size: 12px;
+  }
+  .tree-group-head:hover { background: var(--bg-hover); }
+  .tree-group-head .dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 5px 0 currentColor; }
+  .tree-group-head .n { margin-left: auto; font-size: 10px; color: var(--text-faint); }
+  .tree-group.collapsed .tree-items { display: none; }
+  .tree-items { margin-left: 14px; border-left: 1px solid var(--border); padding-left: 6px; }
+  .tree-item {
+    display: flex; align-items: center; gap: 6px;
+    padding: 3px 8px; border-radius: 6px; cursor: pointer;
+    color: var(--text-muted); font-size: 12.5px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .tree-item:hover { background: var(--bg-hover); color: var(--text); }
+  .tree-item.active { background: var(--bg-active); color: var(--text); }
+  .tree-item .hint {
+    margin-left: auto; font-size: 9px; color: var(--danger);
+    border: 1px solid var(--danger); border-radius: 4px; padding: 0 4px;
+  }
+
+  /* graph controls (graph view) */
+  #graph-controls { flex: 1; overflow-y: auto; display: none; flex-direction: column; gap: 12px; }
+  #stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .stat { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; }
+  .stat .num { font-size: 17px; font-weight: 600; }
+  .stat .lbl { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+  #legend { display: flex; flex-direction: column; gap: 2px; }
+  .legend-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 6px; border-radius: 6px; cursor: pointer;
+    user-select: none; color: var(--text-muted);
+  }
+  .legend-row:hover { background: var(--bg-hover); }
+  .legend-row.off { opacity: 0.32; }
+  .legend-row .dot { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 6px 0 currentColor; }
+  .legend-row .count { margin-left: auto; font-size: 11px; color: var(--text-faint); }
+  .toggle-row {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--text-muted); cursor: pointer; padding: 2px 6px; user-select: none;
+  }
+  .toggle-row input { accent-color: var(--accent); }
+
+  #report-link {
+    display: block; text-align: center;
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text-muted); text-decoration: none; font-size: 12px; font-weight: 600;
+    padding: 7px 0;
+  }
+  #report-link:hover { border-color: var(--accent); color: var(--text); }
+
+  #sidebar footer { font-size: 11px; color: var(--text-faint); padding: 4px 6px; line-height: 1.6; }
+  #sidebar footer code {
+    font-family: var(--mono); font-size: 10px;
+    background: var(--bg-panel); padding: 1px 5px; border-radius: 4px;
+  }
+
+  /* ---------- main area ---------- */
+  #main { position: relative; flex: 1; height: 100%; overflow: hidden; }
+
+  /* note view */
+  #note-view { display: none; height: 100%; overflow-y: auto; }
+  #note {
+    max-width: 780px; margin: 0 auto; padding: 44px 48px 96px;
+    line-height: 1.65; font-size: 14.5px;
+  }
+  #note h1 { font-size: 26px; font-weight: 700; margin: 0 0 10px; letter-spacing: -0.01em; }
+  #note h2 {
+    font-size: 15px; font-weight: 650; margin: 28px 0 10px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  }
+  #note h3 { font-size: 13.5px; font-weight: 650; margin: 18px 0 8px; color: var(--text-muted); }
+  #note p { margin: 8px 0; }
+  #note ul { margin: 8px 0 8px 4px; list-style: none; }
+  #note li {
+    margin: 10px 0; padding: 10px 14px;
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  #note li > .li-line { display: block; }
+  #note blockquote {
+    margin: 7px 0 4px; padding: 6px 10px;
+    border-left: 2px solid var(--accent);
+    background: rgba(127, 109, 242, 0.06);
+    border-radius: 0 5px 5px 0;
+    color: var(--text-muted); font-size: 13px;
+  }
+  #note code {
+    font-family: var(--mono); font-size: 0.86em;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 1px 5px; border-radius: 4px; color: #c8b8ff;
+  }
+  #note pre {
+    background: var(--bg-deep); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px;
+    overflow-x: auto; margin: 10px 0;
+  }
+  #note pre code { background: none; padding: 0; color: var(--text-muted); font-size: 12px; line-height: 1.55; }
+  #note hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  #note small { color: var(--text-faint); font-size: 11px; word-break: break-all; }
+  #note del { color: var(--text-faint); }
+  #note .wikilink {
+    color: var(--accent); cursor: pointer; text-decoration: none;
+    border-bottom: 1px dashed rgba(127, 109, 242, 0.45);
+  }
+  #note .wikilink:hover { border-bottom-style: solid; }
+  #note-placeholder {
+    height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px;
+    color: var(--text-faint); text-align: center;
+  }
+  #note-placeholder .big { font-size: 15px; color: var(--text-muted); }
+  #note-placeholder code {
+    font-family: var(--mono); font-size: 12px;
+    background: var(--bg-panel); padding: 3px 8px; border-radius: 5px;
+  }
+
+  /* graph view */
+  #stage { position: relative; display: none; height: 100%; }
+  #graph { position: absolute; inset: 0; cursor: grab; }
+  #graph.dragging { cursor: grabbing; }
+  #hud {
+    position: absolute; right: 14px; bottom: 12px;
+    font-size: 11px; color: var(--text-faint);
+    background: rgba(22, 22, 22, 0.7);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 4px 10px; user-select: none;
+  }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+
+<aside id="sidebar">
+  <div id="brand">
+    <div class="logo">open<span>fde</span></div>
+    <div class="tag">engagement memory</div>
+  </div>
+
+  <div>
+    <label class="small" for="engagement">Engagement</label>
+    <select id="engagement"></select>
+  </div>
+
+  <div>
+    <input id="search" type="search" placeholder="Search memory…" autocomplete="off" />
+  </div>
+  <div id="results"></div>
+
+  <div id="views">
+    <button id="view-notes" class="active">Notes</button>
+    <button id="view-graph">Graph</button>
+  </div>
+
+  <a id="report-link" href="/report" target="_blank">Executive report ↗</a>
+
+  <div id="tree"></div>
+
+  <div id="graph-controls">
+    <div id="stats"></div>
+    <div>
+      <label class="small">Entity types</label>
+      <div id="legend"></div>
+    </div>
+    <label class="toggle-row">
+      <input type="checkbox" id="show-expired" />
+      <span>Show superseded facts</span>
+    </label>
+  </div>
+
+  <footer>
+    Feed it from the terminal:<br />
+    <code>openfde ingest notes.md</code>
+    <code>openfde extract</code>
+  </footer>
+</aside>
+
+<main id="main">
+  <div id="note-view">
+    <article id="note"></article>
+    <div id="note-placeholder">
+      <div class="big">Pick a note from the tree</div>
+      <div>Entities and episodes render as markdown notes.<br />Nothing here yet? Ingest and extract:</div>
+      <code>openfde ingest interview.md && openfde extract</code>
+    </div>
+  </div>
+  <div id="stage">
+    <canvas id="graph"></canvas>
+    <div id="hud">drag to pan · scroll to zoom · click a node to open its note</div>
+  </div>
+</main>
+
+<script>
+"use strict";
+
+/* ---------------- palette ---------------- */
+const TYPE_COLORS = {
+  Customer:     "#e9973f",
+  Person:       "#e3c567",
+  System:       "#4f9cf9",
+  DataSource:   "#43b9a9",
+  Workflow:     "#8f7ff7",
+  WorkflowStep: "#b3a6fb",
+  Decision:     "#f2708a",
+  Constraint:   "#e05252",
+  PainPoint:    "#d98ce0",
+  Asset:        "#6ad48a",
+};
+const STATUS_COLORS = {
+  draft: "#777777", ready: "#4f9cf9", claimed: "#e3c567", running: "#e9973f",
+  review: "#d98ce0", accepted: "#6ad48a", rejected: "#e05252",
+};
+const ACCENT = "#7f6df2";
+
+/* ---------------- state ---------------- */
+const state = {
+  engagement: null,
+  view: "notes",
+  nodes: [],
+  links: [],
+  byId: new Map(),
+  hiddenTypes: new Set(),
+  showExpired: false,
+  hoverId: null,
+  selectedId: null,
+  matchIds: null,
+  openNoteId: null,
+  tx: 0, ty: 0, scale: 1,
+  alpha: 0,
+};
+
+/* ---------------- api ---------------- */
+async function api(path, params = {}) {
+  const url = new URL(path, location.origin);
+  if (state.engagement) url.searchParams.set("engagement", state.engagement);
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error((await res.json()).error ?? res.statusText);
+  return res.json();
+}
+
+async function loadEngagements() {
+  const data = await api("/api/engagements");
+  const select = document.getElementById("engagement");
+  select.innerHTML = "";
+  for (const slug of data.engagements) {
+    const opt = document.createElement("option");
+    opt.value = slug;
+    opt.textContent = slug;
+    select.appendChild(opt);
+  }
+  state.engagement = data.current ?? data.engagements[0] ?? null;
+  if (state.engagement) select.value = state.engagement;
+  const reportLink = document.getElementById("report-link");
+  const syncReportLink = () => {
+    reportLink.href = state.engagement
+      ? `/report?engagement=${encodeURIComponent(state.engagement)}`
+      : "/report";
+  };
+  syncReportLink();
+  select.onchange = () => {
+    state.engagement = select.value;
+    state.openNoteId = null;
+    state.selectedId = null;
+    syncReportLink();
+    refresh();
+  };
+}
+
+async function refresh() {
+  const [graph, status, tree] = await Promise.all([
+    api("/api/graph", { expired: state.showExpired ? "1" : "0" }),
+    api("/api/status"),
+    api("/api/tree"),
+  ]);
+  mergePositions(graph);
+  renderStats(status);
+  renderLegend();
+  renderTree(tree);
+  if (state.openNoteId) openNote(state.openNoteId, { keepView: true });
+  else showPlaceholder(true);
+  reheat(1);
+}
+
+/* ---------------- view switching ---------------- */
+function setView(view) {
+  state.view = view;
+  document.getElementById("view-notes").classList.toggle("active", view === "notes");
+  document.getElementById("view-graph").classList.toggle("active", view === "graph");
+  document.getElementById("note-view").style.display = view === "notes" ? "block" : "none";
+  document.getElementById("stage").style.display = view === "graph" ? "block" : "none";
+  document.getElementById("tree").style.display = view === "notes" ? "block" : "none";
+  document.getElementById("graph-controls").style.display = view === "graph" ? "flex" : "none";
+  if (view === "graph") { resizeCanvas(); reheat(0.4); }
+}
+document.getElementById("view-notes").onclick = () => setView("notes");
+document.getElementById("view-graph").onclick = () => setView("graph");
+
+/* ---------------- tree ---------------- */
+function renderTree(tree) {
+  const el = document.getElementById("tree");
+  el.innerHTML = "";
+  for (const section of tree.sections) {
+    const sec = document.createElement("div");
+    sec.className = "tree-section";
+    const head = document.createElement("div");
+    head.className = "tree-head";
+    head.innerHTML = `<span class="tw">▼</span><span>${escapeHtml(section.label)}</span>`;
+    head.onclick = () => sec.classList.toggle("collapsed");
+    sec.appendChild(head);
+    const body = document.createElement("div");
+    body.className = "tree-body";
+    for (const group of section.groups) {
+      const g = document.createElement("div");
+      g.className = "tree-group";
+      const color = TYPE_COLORS[group.label] ?? STATUS_COLORS[group.label] ?? "#777";
+      const gh = document.createElement("div");
+      gh.className = "tree-group-head";
+      gh.innerHTML =
+        `<span class="dot" style="background:${color};color:${color}"></span>` +
+        `<span>${escapeHtml(group.label)}</span><span class="n">${group.items.length}</span>`;
+      gh.onclick = () => g.classList.toggle("collapsed");
+      g.appendChild(gh);
+      const items = document.createElement("div");
+      items.className = "tree-items";
+      for (const item of group.items) {
+        const it = document.createElement("div");
+        it.className = "tree-item" + (item.id === state.openNoteId ? " active" : "");
+        it.dataset.noteId = item.id;
+        it.innerHTML =
+          `<span>${escapeHtml(item.label)}</span>` +
+          (item.hint ? `<span class="hint">${escapeHtml(item.hint)}</span>` : "");
+        it.onclick = () => openNote(item.id);
+        items.appendChild(it);
+      }
+      g.appendChild(items);
+      body.appendChild(g);
+    }
+    sec.appendChild(body);
+    el.appendChild(sec);
+  }
+}
+
+function markActiveTreeItem() {
+  for (const el of document.querySelectorAll(".tree-item")) {
+    el.classList.toggle("active", el.dataset.noteId === state.openNoteId);
+  }
+}
+
+/* ---------------- notes ---------------- */
+function showPlaceholder(show) {
+  document.getElementById("note-placeholder").style.display = show ? "flex" : "none";
+  document.getElementById("note").style.display = show ? "none" : "block";
+}
+
+function showNote(data, opts = {}) {
+  state.openNoteId = data.id;
+  state.selectedId = data.id.startsWith("ent_") ? data.id : null;
+  document.getElementById("note").innerHTML = renderMarkdown(data.markdown);
+  showPlaceholder(false);
+  if (!opts.keepView) setView("notes");
+  markActiveTreeItem();
+  document.getElementById("note-view").scrollTop = 0;
+  for (const el of document.querySelectorAll("#note .wikilink")) {
+    el.onclick = () => openNoteByName(el.dataset.target);
+  }
+}
+
+async function openNote(id, opts = {}) {
+  try {
+    showNote(await api("/api/note", { id }), opts);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function openNoteByName(name) {
+  try {
+    showNote(await api("/api/note", { name }));
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+/* ---------------- markdown renderer ----------------
+   Minimal renderer for the subset the server emits:
+   #/##/### headings, "- " list items with two-space continuation lines,
+   > blockquotes, ``` fences, --- hr, inline: ** * ` ~~ [[wikilink]],
+   plus a literal <small> passthrough for provenance lines. */
+function inlineMd(text) {
+  let s = escapeHtml(text);
+  s = s.replace(/&lt;small&gt;/g, "<small>").replace(/&lt;\/small&gt;/g, "</small>");
+  s = s.replace(/\[\[([^\]]+)\]\]/g, (m, name) =>
+    `<a class="wikilink" data-target="${name.replace(/"/g, "&quot;")}">${name}</a>`);
+  s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/(^|\W)\*([^*\s][^*]*)\*/g, "$1<em>$2</em>");
+  s = s.replace(/~~([^~]+)~~/g, "<del>$1</del>");
+  s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+  return s;
+}
+
+function renderMarkdown(md) {
+  const lines = md.split("\n");
+  const out = [];
+  let i = 0;
+  let inList = false;
+  const closeList = () => { if (inList) { out.push("</ul>"); inList = false; } };
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (line.startsWith("```")) {
+      closeList();
+      const buf = [];
+      i++;
+      while (i < lines.length && !lines[i].startsWith("```")) buf.push(lines[i++]);
+      i++;
+      out.push(`<pre><code>${escapeHtml(buf.join("\n"))}</code></pre>`);
+      continue;
+    }
+    if (/^### /.test(line)) { closeList(); out.push(`<h3>${inlineMd(line.slice(4))}</h3>`); i++; continue; }
+    if (/^## /.test(line)) { closeList(); out.push(`<h2>${inlineMd(line.slice(3))}</h2>`); i++; continue; }
+    if (/^# /.test(line)) { closeList(); out.push(`<h1>${inlineMd(line.slice(2))}</h1>`); i++; continue; }
+    if (/^---+\s*$/.test(line)) { closeList(); out.push("<hr />"); i++; continue; }
+
+    if (line.startsWith("- ")) {
+      if (!inList) { out.push("<ul>"); inList = true; }
+      const parts = [`<span class="li-line">${inlineMd(line.slice(2))}</span>`];
+      i++;
+      while (i < lines.length && /^  \S/.test(lines[i])) {
+        const cont = lines[i].slice(2);
+        if (cont.startsWith("> ")) parts.push(`<blockquote>${inlineMd(cont.slice(2))}</blockquote>`);
+        else parts.push(`<span class="li-line">${inlineMd(cont)}</span>`);
+        i++;
+      }
+      out.push(`<li>${parts.join("")}</li>`);
+      continue;
+    }
+
+    if (line.startsWith("> ")) {
+      closeList();
+      const buf = [];
+      while (i < lines.length && lines[i].startsWith("> ")) buf.push(inlineMd(lines[i++].slice(2)));
+      out.push(`<blockquote>${buf.join("<br />")}</blockquote>`);
+      continue;
+    }
+
+    if (line.trim() === "") { closeList(); i++; continue; }
+
+    closeList();
+    out.push(`<p>${inlineMd(line)}</p>`);
+    i++;
+  }
+  closeList();
+  return out.join("\n");
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+
+/* ---------------- sidebar: stats / legend / search ---------------- */
+function renderStats(s) {
+  const el = document.getElementById("stats");
+  el.innerHTML = "";
+  const items = [
+    [s.entities, "entities"],
+    [s.activeFacts, "active facts"],
+    [s.episodes, "episodes"],
+    [s.expiredFacts, "superseded"],
+    [s.openTasks ?? 0, "open tasks"],
+  ];
+  for (const [num, lbl] of items) {
+    const div = document.createElement("div");
+    div.className = "stat";
+    div.innerHTML = `<div class="num">${num}</div><div class="lbl">${lbl}</div>`;
+    el.appendChild(div);
+  }
+}
+
+function renderLegend() {
+  const counts = {};
+  for (const n of state.nodes) counts[n.type] = (counts[n.type] ?? 0) + 1;
+  const el = document.getElementById("legend");
+  el.innerHTML = "";
+  for (const [type, color] of Object.entries(TYPE_COLORS)) {
+    if (!counts[type]) continue;
+    const row = document.createElement("div");
+    row.className = "legend-row" + (state.hiddenTypes.has(type) ? " off" : "");
+    row.innerHTML =
+      `<span class="dot" style="background:${color};color:${color}"></span>` +
+      `<span>${type}</span><span class="count">${counts[type]}</span>`;
+    row.onclick = () => {
+      state.hiddenTypes.has(type) ? state.hiddenTypes.delete(type) : state.hiddenTypes.add(type);
+      renderLegend();
+      reheat(0.3);
+    };
+    el.appendChild(row);
+  }
+}
+
+document.getElementById("show-expired").onchange = (e) => {
+  state.showExpired = e.target.checked;
+  refresh();
+};
+
+let searchTimer = null;
+document.getElementById("search").oninput = (e) => {
+  clearTimeout(searchTimer);
+  const q = e.target.value.trim();
+  searchTimer = setTimeout(async () => {
+    const resultsEl = document.getElementById("results");
+    if (!q) {
+      state.matchIds = null;
+      resultsEl.style.display = "none";
+      resultsEl.innerHTML = "";
+      reheat(0.1);
+      return;
+    }
+    const data = await api("/api/search", { q });
+    state.matchIds = new Set(data.entityIds);
+    resultsEl.innerHTML = "";
+    for (const hit of data.hits.slice(0, 8)) {
+      const div = document.createElement("div");
+      div.className = "result";
+      div.innerHTML =
+        `<span class="who">${escapeHtml(hit.subject)}</span> ` +
+        `${escapeHtml(hit.statement.slice(0, 90))}${hit.statement.length > 90 ? "…" : ""}`;
+      div.onclick = () => openNoteByName(hit.subject);
+      resultsEl.appendChild(div);
+    }
+    resultsEl.style.display = data.hits.length ? "flex" : "none";
+    reheat(0.1);
+  }, 220);
+};
+
+/* ---------------- force simulation ---------------- */
+const canvas = document.getElementById("graph");
+const ctx = canvas.getContext("2d");
+let dpr = window.devicePixelRatio || 1;
+
+function resizeCanvas() {
+  dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = Math.max(1, rect.width * dpr);
+  canvas.height = Math.max(1, rect.height * dpr);
+  canvas.style.width = rect.width + "px";
+  canvas.style.height = rect.height + "px";
+}
+window.addEventListener("resize", () => { resizeCanvas(); reheat(0.2); });
+
+function mergePositions(graph) {
+  const prev = state.byId;
+  const cx = canvas.width / (2 * dpr) || 500, cy = canvas.height / (2 * dpr) || 400;
+  state.nodes = graph.nodes.map((n) => {
+    const old = prev.get(n.id);
+    const angle = Math.random() * Math.PI * 2;
+    const r = 60 + Math.random() * 220;
+    return Object.assign(n, {
+      x: old ? old.x : cx + Math.cos(angle) * r,
+      y: old ? old.y : cy + Math.sin(angle) * r,
+      vx: 0, vy: 0,
+      radius: 4.5 + Math.min(9, Math.sqrt(n.degree || 0) * 2.2),
+    });
+  });
+  state.byId = new Map(state.nodes.map((n) => [n.id, n]));
+  state.links = graph.links.filter((l) => state.byId.has(l.source) && state.byId.has(l.target));
+}
+
+function visibleNodes() { return state.nodes.filter((n) => !state.hiddenTypes.has(n.type)); }
+function visibleLinks() {
+  return state.links.filter(
+    (l) => !state.hiddenTypes.has(state.byId.get(l.source).type) &&
+           !state.hiddenTypes.has(state.byId.get(l.target).type));
+}
+
+function reheat(alpha) { state.alpha = Math.max(state.alpha, alpha); }
+
+function stepPhysics() {
+  const nodes = visibleNodes();
+  const links = visibleLinks();
+  if (nodes.length === 0 || state.alpha < 0.003) return;
+  const a = state.alpha;
+  const cx = canvas.width / (2 * dpr), cy = canvas.height / (2 * dpr);
+
+  for (let i = 0; i < nodes.length; i++) {
+    const p = nodes[i];
+    for (let j = i + 1; j < nodes.length; j++) {
+      const q = nodes[j];
+      let dx = p.x - q.x, dy = p.y - q.y;
+      let d2 = dx * dx + dy * dy;
+      if (d2 < 1) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d2 = 1; }
+      if (d2 > 250000) continue;
+      const f = (4200 * a) / d2;
+      const d = Math.sqrt(d2);
+      const fx = (dx / d) * f, fy = (dy / d) * f;
+      p.vx += fx; p.vy += fy;
+      q.vx -= fx; q.vy -= fy;
+    }
+  }
+  for (const l of links) {
+    const s = state.byId.get(l.source), t = state.byId.get(l.target);
+    const dx = t.x - s.x, dy = t.y - s.y;
+    const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+    const f = ((d - 150) / d) * 0.05 * a * 6;
+    s.vx += dx * f; s.vy += dy * f;
+    t.vx -= dx * f; t.vy -= dy * f;
+  }
+  for (const n of nodes) {
+    n.vx += (cx - n.x) * 0.0035 * a * 6;
+    n.vy += (cy - n.y) * 0.0035 * a * 6;
+  }
+  for (const n of nodes) {
+    if (n === dragNode) { n.vx = 0; n.vy = 0; continue; }
+    n.vx *= 0.82; n.vy *= 0.82;
+    n.x += n.vx; n.y += n.vy;
+  }
+  state.alpha *= 0.985;
+}
+
+/* ---------------- graph rendering ---------------- */
+function neighborSets() {
+  const focus = state.hoverId ?? state.selectedId;
+  if (!focus) return null;
+  const ids = new Set([focus]);
+  const linkIds = new Set();
+  for (const l of state.links) {
+    if (l.source === focus || l.target === focus) {
+      ids.add(l.source); ids.add(l.target);
+      linkIds.add(l.factId);
+    }
+  }
+  return { ids, linkIds, focus };
+}
+
+function draw() {
+  if (state.view !== "graph") return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+  ctx.translate(state.tx, state.ty);
+  ctx.scale(state.scale, state.scale);
+
+  const focus = neighborSets();
+  const labelAlpha = Math.max(0, Math.min(1, (state.scale - 0.75) / 0.5));
+
+  for (const l of visibleLinks()) {
+    const s = state.byId.get(l.source), t = state.byId.get(l.target);
+    const inFocus = focus && focus.linkIds.has(l.factId);
+    const dimmed = focus && !inFocus;
+    ctx.beginPath();
+    ctx.moveTo(s.x, s.y);
+    ctx.lineTo(t.x, t.y);
+    ctx.lineWidth = (inFocus ? 1.6 : 1) / state.scale;
+    if (l.expired) ctx.setLineDash([4 / state.scale, 4 / state.scale]);
+    ctx.strokeStyle = inFocus ? "rgba(127,109,242,0.75)"
+      : dimmed ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.10)";
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  for (const n of visibleNodes()) {
+    const color = TYPE_COLORS[n.type] ?? "#888";
+    const isFocus = focus && focus.ids.has(n.id);
+    const dimmed = (focus && !isFocus) || (state.matchIds && !state.matchIds.has(n.id));
+    const isMatch = state.matchIds && state.matchIds.has(n.id);
+    const isSelected = n.id === state.selectedId;
+
+    ctx.globalAlpha = dimmed ? 0.16 : 1;
+    if (!dimmed) {
+      const glow = ctx.createRadialGradient(n.x, n.y, n.radius * 0.4, n.x, n.y, n.radius * 3);
+      glow.addColorStop(0, color + "55");
+      glow.addColorStop(1, "transparent");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.radius * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    if (isSelected || isMatch) {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.radius + 3.5 / state.scale, 0, Math.PI * 2);
+      ctx.lineWidth = 1.6 / state.scale;
+      ctx.strokeStyle = isSelected ? "#ffffff" : ACCENT;
+      ctx.stroke();
+    }
+    const showLabel = isFocus || isSelected || isMatch || labelAlpha > 0.05;
+    if (showLabel) {
+      ctx.globalAlpha = dimmed ? 0.1 : isFocus || isSelected || isMatch ? 1 : labelAlpha;
+      ctx.font = `${11 / state.scale}px ${getComputedStyle(document.body).fontFamily}`;
+      ctx.fillStyle = "#c8c8c8";
+      ctx.textAlign = "center";
+      ctx.fillText(n.name, n.x, n.y + n.radius + 13 / state.scale);
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
+function frame() {
+  stepPhysics();
+  draw();
+  requestAnimationFrame(frame);
+}
+
+/* ---------------- graph interactions ---------------- */
+let dragNode = null;
+let panning = false;
+let lastX = 0, lastY = 0;
+let moved = false;
+
+function toWorld(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (clientX - rect.left - state.tx) / state.scale,
+    y: (clientY - rect.top - state.ty) / state.scale,
+  };
+}
+
+function pick(clientX, clientY) {
+  const p = toWorld(clientX, clientY);
+  let best = null, bestD = Infinity;
+  for (const n of visibleNodes()) {
+    const dx = n.x - p.x, dy = n.y - p.y;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    if (d < Math.max(n.radius + 4, 10) && d < bestD) { best = n; bestD = d; }
+  }
+  return best;
+}
+
+canvas.addEventListener("pointerdown", (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  moved = false;
+  lastX = e.clientX; lastY = e.clientY;
+  const hit = pick(e.clientX, e.clientY);
+  if (hit) { dragNode = hit; reheat(0.15); }
+  else { panning = true; canvas.classList.add("dragging"); }
+});
+
+canvas.addEventListener("pointermove", (e) => {
+  if (Math.abs(e.clientX - lastX) + Math.abs(e.clientY - lastY) > 3) moved = true;
+  if (dragNode) {
+    const p = toWorld(e.clientX, e.clientY);
+    dragNode.x = p.x; dragNode.y = p.y;
+    reheat(0.08);
+  } else if (panning) {
+    state.tx += e.clientX - lastX;
+    state.ty += e.clientY - lastY;
+  } else {
+    const hit = pick(e.clientX, e.clientY);
+    state.hoverId = hit ? hit.id : null;
+    canvas.style.cursor = hit ? "pointer" : "grab";
+  }
+  lastX = e.clientX; lastY = e.clientY;
+});
+
+canvas.addEventListener("pointerup", (e) => {
+  if (!moved) {
+    const hit = pick(e.clientX, e.clientY);
+    if (hit) openNote(hit.id);
+    else state.selectedId = null;
+  }
+  dragNode = null;
+  panning = false;
+  canvas.classList.remove("dragging");
+});
+
+canvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const factor = Math.exp(-e.deltaY * 0.0012);
+  const next = Math.min(4, Math.max(0.2, state.scale * factor));
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  state.tx = mx - ((mx - state.tx) / state.scale) * next;
+  state.ty = my - ((my - state.ty) / state.scale) * next;
+  state.scale = next;
+}, { passive: false });
+
+canvas.addEventListener("dblclick", () => { state.tx = 0; state.ty = 0; state.scale = 1; });
+
+/* ---------------- boot ---------------- */
+(async function boot() {
+  resizeCanvas();
+  setView("notes");
+  await loadEngagements();
+  if (state.engagement) await refresh();
+  frame();
+})();
+</script>
+</body>
+</html>
