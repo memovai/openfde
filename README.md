@@ -2,7 +2,7 @@
 
 **English** | [简体中文](./README.zh-CN.md) | [日本語](./README.ja.md) | [Español](./README.es.md)
 
-> Turn customer interviews into memory, memory into traceable todos, todos into coding-agent work — gated by evals.
+> **Deliver AI solutions 100x faster.** Interviews become memory, memory becomes traceable todos, todos become coding-agent work — gated by evals.
 
 **OpenFDE** is a local-first AI workspace for forward deployed engineers. It compiles engagement material — interviews, chat logs, documents, PDFs, images — into an ontology-backed operational memory, and closes the loop between humans and coding agents: agents pull tasks and context bundles from the ledger, execute, and write findings back — while the customer's leadership watches progress live, with every claim citing its source.
 

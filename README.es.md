@@ -2,7 +2,7 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md) | [日本語](./README.ja.md) | **Español**
 
-> Convierte entrevistas con clientes en memoria, la memoria en tareas trazables, y las tareas en trabajo para coding agents — con evals como puerta de control.
+> **Entrega soluciones de IA 100x más rápido.** Las entrevistas se vuelven memoria, la memoria tareas trazables, y las tareas trabajo para coding agents — con evals como puerta de control.
 
 **OpenFDE** es un espacio de trabajo de IA, local-first, para forward deployed engineers. Compila el material del engagement — entrevistas, registros de chat, documentos, PDF, imágenes — en una memoria operativa respaldada por ontología, y cierra el bucle entre humanos y coding agents: los agents reclaman tareas y paquetes de contexto del ledger, ejecutan y devuelven hallazgos — mientras la dirección del cliente observa el progreso en vivo, con cada afirmación citando su fuente.
 

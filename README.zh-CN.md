@@ -2,7 +2,7 @@
 
 [English](./README.md) | **简体中文** | [日本語](./README.ja.md) | [Español](./README.es.md)
 
-> 把客户访谈变成记忆，把记忆变成可追踪的任务，把任务交给 coding agent 执行——由 eval 把关。
+> **以 100 倍速度交付 AI 解决方案。** 访谈变成记忆，记忆变成可追踪的任务，任务交给 coding agent 执行——由 eval 把关。
 
 **OpenFDE** 是为 FDE（Forward Deployed Engineer）打造的本地优先 AI 工作台。它把 engagement 材料——访谈、聊天记录、文档、PDF、图片——编译成本体支撑的运营记忆，并让人和 coding agent 形成闭环：agent 从 ledger 认领任务、拉取上下文包、执行并回写发现——客户管理层实时看到进展，每条结论都有出处。
 

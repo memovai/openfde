@@ -21,7 +21,7 @@ const program = new Command();
 program
   .name("openfde")
   .description(
-    "Local engagement memory for forward deployed engineers: interviews in, traceable memory out",
+    "AI workspace for forward deployed engineers — deliver AI solutions 100x faster",
   )
   .version("0.1.0");
 
