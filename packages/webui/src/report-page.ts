@@ -140,9 +140,9 @@ export function reportPage(report: ReportData, opts: ReportPageOptions = {}): st
 <title>Engagement report — ${esc(report.engagement)}</title>
 <style>
   :root {
-    --ink: #1c1c1e; --muted: #6b6b70; --faint: #9a9aa0;
-    --line: #e6e4df; --paper: #faf9f7; --card: #ffffff;
-    --accent: #5b4bc4; --ok: #1f7a4d; --warn: #b45309;
+    --ink: #26241f; --muted: #6f6b61; --faint: #a29d90;
+    --line: #e3dfd3; --paper: #faf9f5; --card: #ffffff;
+    --accent: #c15f3c; --ok: #2e7d4f; --warn: #a16207;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -153,7 +153,7 @@ export function reportPage(report: ReportData, opts: ReportPageOptions = {}): st
   }
   main { max-width: 860px; margin: 0 auto; padding: 56px 40px 80px; }
   header.rpt { border-bottom: 2px solid var(--ink); padding-bottom: 18px; margin-bottom: 8px; }
-  header.rpt h1 { font-size: 30px; letter-spacing: -0.01em; }
+  header.rpt h1 { font-family: Georgia, "Times New Roman", serif; font-size: 30px; font-weight: 600; letter-spacing: -0.01em; }
   header.rpt .sub { color: var(--muted); margin-top: 6px; }
   .stats { display: flex; gap: 28px; flex-wrap: wrap; margin: 22px 0 8px; }
   .stat .num { font-size: 26px; font-weight: 700; }
@@ -183,13 +183,13 @@ export function reportPage(report: ReportData, opts: ReportPageOptions = {}): st
   .evidence .stmt { font-size: 14px; }
   .evidence blockquote {
     margin: 6px 0; padding: 6px 12px; border-left: 3px solid var(--accent);
-    background: rgba(91,75,196,0.05); color: var(--muted); font-size: 13px;
+    background: rgba(193,95,60,0.05); color: var(--muted); font-size: 13px;
     border-radius: 0 6px 6px 0;
   }
   .evidence .src { font-size: 11.5px; color: var(--faint); word-break: break-all; }
   code {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88em;
-    background: rgba(91,75,196,0.08); padding: 1px 6px; border-radius: 4px;
+    background: rgba(193,95,60,0.08); padding: 1px 6px; border-radius: 4px;
   }
   .pill {
     display: inline-block; border: 1px solid var(--line); background: var(--card);
@@ -207,7 +207,7 @@ export function reportPage(report: ReportData, opts: ReportPageOptions = {}): st
     position: fixed; top: 18px; right: 18px;
     background: var(--accent); color: white; border: none; border-radius: 8px;
     padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
-    box-shadow: 0 2px 8px rgba(91,75,196,0.3);
+    box-shadow: 0 2px 8px rgba(193,95,60,0.28);
   }
   .live { color: var(--faint); font-weight: 700; font-size: 12px; letter-spacing: 0.04em; }
   .live .dot {
