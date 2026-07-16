@@ -414,7 +414,7 @@ const state = {
   pages: [],
   page: null,
   tx: 0, ty: 0, scale: 1,
-  alpha: 0,
+  needsFit: false,
 };
 
 /* ---------------- api ---------------- */
@@ -486,7 +486,7 @@ function setView(view) {
   document.getElementById("stage").style.display = view === "graph" ? "block" : "none";
   document.getElementById("tree").style.display = view === "notes" ? "block" : "none";
   document.getElementById("graph-controls").style.display = view === "graph" ? "flex" : "none";
-  if (view === "graph") { resizeCanvas(); reheat(0.4); }
+  if (view === "graph") { resizeCanvas(); maybeFit(); }
 }
 document.getElementById("view-notes").onclick = () => setView("notes");
 document.getElementById("view-graph").onclick = () => setView("graph");
@@ -1253,7 +1253,9 @@ function renderLegend() {
     row.onclick = () => {
       state.hiddenTypes.has(type) ? state.hiddenTypes.delete(type) : state.hiddenTypes.add(type);
       renderLegend();
-      reheat(0.3);
+      layoutGraph();
+      state.needsFit = true;
+      maybeFit();
     };
     el.appendChild(row);
   }
@@ -1310,21 +1312,19 @@ function resizeCanvas() {
 window.addEventListener("resize", () => { resizeCanvas(); reheat(0.2); });
 
 function mergePositions(graph) {
-  const prev = state.byId;
-  const cx = canvas.width / (2 * dpr) || 500, cy = canvas.height / (2 * dpr) || 400;
-  state.nodes = graph.nodes.map((n) => {
-    const old = prev.get(n.id);
-    const angle = Math.random() * Math.PI * 2;
-    const r = 60 + Math.random() * 220;
-    return Object.assign(n, {
-      x: old ? old.x : cx + Math.cos(angle) * r,
-      y: old ? old.y : cy + Math.sin(angle) * r,
-      vx: 0, vy: 0,
+  state.nodes = graph.nodes.map((n) =>
+    Object.assign(n, {
+      x: 0, y: 0,
       radius: 4.5 + Math.min(9, Math.sqrt(n.degree || 0) * 2.2),
-    });
-  });
+    }));
   state.byId = new Map(state.nodes.map((n) => [n.id, n]));
   state.links = graph.links.filter((l) => state.byId.has(l.source) && state.byId.has(l.target));
+  layoutGraph();
+  if (state.fitKey !== state.engagement) {
+    state.fitKey = state.engagement;
+    state.needsFit = true;
+  }
+  maybeFit();
 }
 
 function visibleNodes() { return state.nodes.filter((n) => !state.hiddenTypes.has(n.type)); }
@@ -1334,48 +1334,106 @@ function visibleLinks() {
            !state.hiddenTypes.has(state.byId.get(l.target).type));
 }
 
-function reheat(alpha) { state.alpha = Math.max(state.alpha, alpha); }
+function reheat() { /* layout is deterministic now; kept for call sites */ }
 
-function stepPhysics() {
+/* ---------------- deterministic layered layout ----------------
+   No physics: rank nodes along the flow semantics (people ->
+   pains/decisions -> steps -> workflows -> goals; infrastructure
+   upstream of what depends on it), then order each column by the
+   barycenter of its neighbors so edges run left-to-right with few
+   crossings. Same idea as the mermaid renderer, applied to the
+   whole entity graph. */
+const LAYOUT_REVERSE = new Set(["DEPENDS_ON", "DECIDED_BY"]);
+
+function layoutGraph() {
   const nodes = visibleNodes();
-  const links = visibleLinks();
-  if (nodes.length === 0 || state.alpha < 0.003) return;
-  const a = state.alpha;
-  const cx = canvas.width / (2 * dpr), cy = canvas.height / (2 * dpr);
+  if (nodes.length === 0) return;
+  const ids = new Set(nodes.map((n) => n.id));
+  const edges = visibleLinks()
+    .filter((l) => ids.has(l.source) && ids.has(l.target) && l.source !== l.target)
+    .map((l) => LAYOUT_REVERSE.has(l.predicate)
+      ? { from: l.target, to: l.source }
+      : { from: l.source, to: l.target });
 
-  for (let i = 0; i < nodes.length; i++) {
-    const p = nodes[i];
-    for (let j = i + 1; j < nodes.length; j++) {
-      const q = nodes[j];
-      let dx = p.x - q.x, dy = p.y - q.y;
-      let d2 = dx * dx + dy * dy;
-      if (d2 < 1) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d2 = 1; }
-      if (d2 > 250000) continue;
-      const f = (4200 * a) / d2;
-      const d = Math.sqrt(d2);
-      const fx = (dx / d) * f, fy = (dy / d) * f;
-      p.vx += fx; p.vy += fy;
-      q.vx -= fx; q.vy -= fy;
+  const rank = new Map(nodes.map((n) => [n.id, 0]));
+  for (let pass = 0; pass <= nodes.length; pass++) {
+    let changed = false;
+    for (const e of edges) {
+      const r = rank.get(e.from) + 1;
+      if (r > rank.get(e.to) && r <= nodes.length) { rank.set(e.to, r); changed = true; }
     }
+    if (!changed) break;
   }
-  for (const l of links) {
-    const s = state.byId.get(l.source), t = state.byId.get(l.target);
-    const dx = t.x - s.x, dy = t.y - s.y;
-    const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
-    const f = ((d - 150) / d) * 0.05 * a * 6;
-    s.vx += dx * f; s.vy += dy * f;
-    t.vx -= dx * f; t.vy -= dy * f;
-  }
+  // nodes with no edges go to a quiet trailing column instead of cluttering column 0
+  const linked = new Set();
+  for (const e of edges) { linked.add(e.from); linked.add(e.to); }
+  const maxRank = Math.max(0, ...rank.values());
+  for (const n of nodes) if (!linked.has(n.id)) rank.set(n.id, maxRank + 1);
+
+  const cols = new Map();
   for (const n of nodes) {
-    n.vx += (cx - n.x) * 0.0035 * a * 6;
-    n.vy += (cy - n.y) * 0.0035 * a * 6;
+    const r = rank.get(n.id);
+    if (!cols.has(r)) cols.set(r, []);
+    cols.get(r).push(n);
   }
-  for (const n of nodes) {
-    if (n === dragNode) { n.vx = 0; n.vy = 0; continue; }
-    n.vx *= 0.82; n.vy *= 0.82;
-    n.x += n.vx; n.y += n.vy;
+  const order = [...cols.keys()].sort((a, b) => a - b);
+  for (const col of cols.values()) {
+    col.sort((a, b) => (a.type + a.name).localeCompare(b.type + b.name));
   }
-  state.alpha *= 0.985;
+
+  // barycenter sweeps: order each column by the mean row of its neighbors
+  const row = new Map();
+  for (const col of cols.values()) col.forEach((n, i) => row.set(n.id, i));
+  const sweep = (colOrder, incoming) => {
+    for (const r of colOrder) {
+      const col = cols.get(r);
+      const score = (n) => {
+        const rows = [];
+        for (const e of edges) {
+          if (incoming && e.to === n.id && row.has(e.from)) rows.push(row.get(e.from));
+          if (!incoming && e.from === n.id && row.has(e.to)) rows.push(row.get(e.to));
+        }
+        return rows.length ? rows.reduce((a, b) => a + b, 0) / rows.length : row.get(n.id);
+      };
+      col.sort((a, b) => score(a) - score(b));
+      col.forEach((n, i) => row.set(n.id, i));
+    }
+  };
+  sweep(order, true);
+  sweep([...order].reverse(), false);
+  sweep(order, true);
+
+  const COLGAP = 215, ROWGAP = 68;
+  const maxRows = Math.max(...order.map((r) => cols.get(r).length));
+  order.forEach((r, ci) => {
+    const col = cols.get(r);
+    const y0 = ((maxRows - col.length) * ROWGAP) / 2;
+    col.forEach((n, ri) => {
+      n.x = 90 + ci * COLGAP;
+      n.y = 70 + y0 + ri * ROWGAP;
+    });
+  });
+}
+
+function fitView() {
+  const nodes = visibleNodes();
+  if (nodes.length === 0) return;
+  const xs = nodes.map((n) => n.x), ys = nodes.map((n) => n.y);
+  const minX = Math.min(...xs) - 100, maxX = Math.max(...xs) + 100;
+  const minY = Math.min(...ys) - 60, maxY = Math.max(...ys) + 80;
+  const w = canvas.width / dpr, h = canvas.height / dpr;
+  if (w < 10 || h < 10) return;
+  const scale = Math.min(1.15, w / (maxX - minX), h / (maxY - minY));
+  state.scale = scale;
+  state.tx = (w - (minX + maxX) * scale) / 2;
+  state.ty = (h - (minY + maxY) * scale) / 2;
+}
+
+function maybeFit() {
+  if (!state.needsFit || state.view !== "graph") return;
+  resizeCanvas();
+  fitView();
+  state.needsFit = false;
 }
 
 /* ---------------- graph rendering ---------------- */
@@ -1401,7 +1459,8 @@ function draw() {
   ctx.scale(state.scale, state.scale);
 
   const focus = neighborSets();
-  const labelAlpha = Math.max(0, Math.min(1, (state.scale - 0.75) / 0.5));
+  // ordered layout is meant to be read: labels stay on except at far zoom-out
+  const labelAlpha = Math.max(0, Math.min(1, (state.scale - 0.28) / 0.12));
 
   for (const l of visibleLinks()) {
     const s = state.byId.get(l.source), t = state.byId.get(l.target);
@@ -1450,7 +1509,6 @@ function draw() {
 }
 
 function frame() {
-  stepPhysics();
   draw();
   requestAnimationFrame(frame);
 }
