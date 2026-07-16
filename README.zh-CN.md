@@ -35,6 +35,11 @@ OpenFDE 把这三样变成一个系统，从记忆开始。
 - **FDE 作战工具箱。** 带引用的联网调研（`research`）、隔天 demo 简报（`demo`）、rubric 验收判分（`eval`）、git 就绪的资产库（`asset`）、数据谈判地图（`datamap`）。
 - **可追溯的任务（agent-pull 派发）。** 任务卡存在 ledger 里，带状态机和审计事件流；`openfde context <task>` 组装弹药包——约束置顶、相关记忆随后、全部带引用。
 - **Markdown 为主、Obsidian 风格的工作区。** `openfde serve` 打开本地界面：每个实体、episode 和任务都是一篇 Markdown 笔记——分层树、[[双链]]、行内引用；外加力导向图和与 CLI 投影一一对应的视图（访谈指南、数据地图、资产库）。人用工作区，agent 用 CLI。
+- **自动抽取的流程图。** `openfde flows` 把工作流事实变成 mermaid 流程图——目标、步骤、依赖、阻塞约束、已有的自动化——在工作区（以及 GitHub 上）内联渲染，每条边都对应一条有出处的事实。文字解释实体，流程图解释过程。
+
+  ![openfde 流程图](./docs/flows-ui.png)
+
+- **Notion 风格的页面。** 与账本并存的自由 Markdown 文档，在工作区里按块编辑——点击即编辑，`/` 插入标题、列表、代码、mermaid 图或新页面——agent 通过 `openfde page` 读写同一批文件。
 - **给客户老板的高管报告——实时的。** `/report` 渲染一页浅色可打印的报告，用图谱回答四个问题：能接手什么、减负多少、取代什么、价值多少——缺数字的地方自动生成量化问题。`openfde share` 生成局域网只读链接，agent 干活时页面实时更新，并带实时进展流。
 
   ![openfde 高管报告](./docs/report-ui.png)
@@ -77,6 +82,8 @@ pnpm openfde serve                 # 工作区 :4517，可打印报告在 /repor
 | `openfde eval <task> --input <file>` | 按任务 rubric 判分提交的工作；裁决进审计流并沉淀 eval 数据集 |
 | `openfde asset add/list/show` | 资产库：rubric（建任务时自动生成）、prompt、eval 用例、demo、playbook、skill——文件形态，git 就绪 |
 | `openfde datamap` | 数据谈判地图：每个数据源谁拥有、谁信任、什么依赖它 |
+| `openfde flows` | 自动抽取的 mermaid 流程图：目标、工作流、步骤、阻塞、自动化——每条边都是有出处的事实 |
+| `openfde page add/list/show/edit/remove` | 与账本并存的自由 Markdown 页面；工作区里按块编辑，agent 可脚本化读写 |
 | `openfde interview` | 从图谱缺口生成访谈指南——自上而下（价值→业务流→决策点，老板场）或自下而上（知识挖掘线索） |
 | `openfde report` | 高管版 engagement 报告：机会、减负、自动化覆盖、价值——每条结论带引用 |
 | `openfde serve` | 本地笔记 + 图谱工作区，另有可打印的高管报告页 `/report`（可选守护进程，CLI 不依赖它） |

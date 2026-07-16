@@ -35,6 +35,11 @@ OpenFDE turns all three into one system, starting with memory.
 - **A field toolkit for the FDE motion.** Web research with citations (`research`), next-day demo briefs (`demo`), rubric-based acceptance judging (`eval`), a git-ready asset library (`asset`), and a data negotiation map (`datamap`).
 - **Traceable tasks (agent-pull dispatch).** Task cards live in the ledger with a state machine and an audit trail; `openfde context <task>` assembles the ammunition pack — constraints first, related memory after, everything cited.
 - **A markdown-first, Obsidian-style workspace.** `openfde serve` opens a local UI where every entity, episode, and task is a markdown note — hierarchy tree, [[wiki-links]], citations inline — plus a force-directed graph and Views mirroring the CLI projections (interview guides, data map, asset library). Humans get the workspace; agents get the CLI.
+- **Auto-extracted flow diagrams.** `openfde flows` turns workflow facts into mermaid flowcharts — goals, steps, dependencies, blocking constraints, and what already automates them — rendered inline in the workspace (and on GitHub), every edge backed by a cited fact. Prose explains entities; flows explain the process.
+
+  ![openfde flows](./docs/flows-ui.png)
+
+- **Notion-style pages.** Free-form markdown documents living next to the ledger, block-edited in the workspace — click to edit, `/` to insert headings, lists, code, mermaid diagrams, or new pages — and readable/writable by agents via `openfde page`.
 - **An executive report for the customer's boss — live.** `/report` renders a light, printable page answering four questions from the graph: what we can take over, how much load it removes, what gets replaced, and what it's worth — with quantification questions auto-generated where the numbers are still missing. `openfde share` hands out a read-only LAN link that updates in real time as agents work, including a live progress feed.
 
   ![openfde executive report](./docs/report-ui.png)
@@ -77,6 +82,8 @@ pnpm openfde serve                          # workspace at :4517, printable repo
 | `openfde eval <task> --input <file>` | Judge submitted work against the task's rubric; verdicts land in the audit trail and grow the eval dataset |
 | `openfde asset add/list/show` | The asset library: rubrics (auto-created from task criteria), prompts, eval cases, demos, playbooks, skills — files, git-ready |
 | `openfde datamap` | The data negotiation map: who owns each data source, who trusts it, what depends on it |
+| `openfde flows` | Auto-extracted mermaid flow diagrams: goals, workflows, steps, blockers, automation — every edge a cited fact |
+| `openfde page add/list/show/edit/remove` | Free-form markdown pages next to the ledger; block-edited in the workspace, scriptable for agents |
 | `openfde interview` | Interview guide generated from graph gaps — top-down (value → flows → points, the boss session) or bottom-up (knowledge-mining leads) |
 | `openfde report` | Executive engagement report: opportunities, load relief, automation coverage, value — every claim cited |
 | `openfde status` | Memory overview for the current engagement |

@@ -1,5 +1,6 @@
 import type { Ledger } from "../ledger/database.js";
 import { getTask, listTasks, taskEvents, TASK_STATUSES } from "../dispatch/tasks.js";
+import { entityFlow } from "./flows.js";
 
 /**
  * Notes are read-only markdown projections of the ledger (DESIGN 4.9).
@@ -206,6 +207,9 @@ export function entityNote(db: Ledger, id: string): string | null {
   if (entity.trust && entity.trust !== "unknown") badges.push(`trust: \`${entity.trust}\``);
   md.push(badges.join(" · "));
   if (entity.summary) md.push("", `> ${entity.summary}`);
+
+  const flow = entityFlow(db, id);
+  if (flow) md.push("", "## Flow", "", "```mermaid", flow, "```");
 
   md.push("", `## Facts (${active.length})`, "");
   if (active.length === 0) md.push("_No active facts._");

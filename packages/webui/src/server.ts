@@ -2,20 +2,28 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { readFileSync } from "node:fs";
 import {
   buildDataMap,
+  buildFlows,
   buildInterviewGuide,
+  buildOverviewFlow,
   buildReport,
+  createPage,
   dataMapMarkdown,
+  deletePage,
   entityNote,
+  flowsMarkdown,
   interviewMarkdown,
   listAssets,
+  listPages,
   episodeNote,
   listEngagements,
   loadTree,
   openLedger,
+  readPage,
   recall,
   resolveEngagement,
   resolveEntityByName,
   taskNote,
+  writePage,
   type InterviewMode,
   type Ledger,
 } from "@openfde/core";
@@ -37,6 +45,14 @@ interface GraphLink {
   factId: string;
   statement: string;
   expired: boolean;
+}
+
+async function readBody(req: IncomingMessage): Promise<Record<string, unknown>> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) chunks.push(chunk as Buffer);
+  const raw = Buffer.concat(chunks).toString("utf8");
+  if (!raw) return {};
+  return JSON.parse(raw) as Record<string, unknown>;
 }
 
 function json(res: ServerResponse, body: unknown, status = 200): void {
@@ -129,6 +145,10 @@ function viewMarkdown(slug: string, kind: string): string | null {
       }
       case "datamap":
         return dataMapMarkdown(buildDataMap(db), slug);
+      case "flows": {
+        const overview = buildOverviewFlow(db);
+        return flowsMarkdown([...(overview ? [overview] : []), ...buildFlows(db)], slug);
+      }
       case "assets":
         return assetsMarkdown(slug);
       default:
@@ -248,7 +268,7 @@ export function serve(options: ServeOptions): void {
   const host = options.host ?? "127.0.0.1";
   const share = options.share;
 
-  const server = createServer((req: IncomingMessage, res: ServerResponse) => {
+  const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url ?? "/", `http://localhost:${options.port}`);
     const engagementParam = url.searchParams.get("engagement") ?? undefined;
     const isLocal = LOOPBACK.has(req.socket.remoteAddress ?? "");
@@ -384,6 +404,37 @@ export function serve(options: ServeOptions): void {
           if (markdown === null) return json(res, { error: "unknown view" }, 404);
           json(res, { id: `view:${kind}`, markdown });
           return;
+        }
+        case "/api/pages": {
+          json(res, { pages: listPages(resolveEngagement(engagementParam)) });
+          return;
+        }
+        case "/api/page": {
+          const eng = resolveEngagement(engagementParam);
+          if (req.method === "POST") {
+            const body = await readBody(req);
+            json(res, createPage(eng, String(body.title ?? "")));
+            return;
+          }
+          const pageSlug = url.searchParams.get("slug");
+          if (!pageSlug) return json(res, { error: "missing slug" }, 404);
+          switch (req.method) {
+            case "GET":
+              json(res, { id: `page:${pageSlug}`, slug: pageSlug, markdown: readPage(eng, pageSlug) });
+              return;
+            case "PUT": {
+              const body = await readBody(req);
+              json(res, writePage(eng, pageSlug, String(body.markdown ?? "")));
+              return;
+            }
+            case "DELETE":
+              deletePage(eng, pageSlug);
+              json(res, { deleted: pageSlug });
+              return;
+            default:
+              json(res, { error: "method not allowed" }, 405);
+              return;
+          }
         }
         case "/api/search": {
           const q = url.searchParams.get("q")?.trim();

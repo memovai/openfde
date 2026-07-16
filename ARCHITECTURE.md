@@ -5,10 +5,13 @@ The spine is the `openfde` CLI — humans and coding agents drive the same
 verbs; the web workspace (`openfde serve`) is an optional projection of the
 same data. One SQLite ledger per engagement; no server required.
 
-```
-data flow:   interviews ──ingest──▶ episodes ──extract──▶ entities/facts
-             facts ──recall/context──▶ humans & agents ──remember/task──▶ ledger
-             ledger ──projections──▶ notes · graph · executive report
+```mermaid
+flowchart LR
+  raw["interviews · chats · PDFs · images"] -->|ingest| ep["episodes"]
+  ep -->|extract| facts["entities + facts"]
+  facts -->|recall / context| work["humans + coding agents"]
+  work -->|remember / task| ledger["engagement ledger"]
+  ledger -->|projections| views["notes · graph · flows · data map · report"]
 ```
 
 ## Repository layout
@@ -53,6 +56,9 @@ packages/
       projections/          # markdown views of the ledger (shared by webui & export)
         notes.ts            #   tree + entity/episode/task notes, [[wiki-links]]
         datamap.ts          #   the data negotiation map (owners / trust / dependents)
+        flows.ts            #   auto-extracted mermaid flow diagrams (goals/steps/blockers)
+      pages/                # free-form markdown documents next to the ledger
+        store.ts            #   create/list/read/write/delete; block-edited in the webui
       report/               # executive projections
         build.ts            #   derive the four boss questions from the ledger
         markdown.ts         #   markdown rendering
@@ -61,9 +67,12 @@ packages/
   webui/                    # @openfde/webui — the optional local workspace
     src/
       server.ts             #   node:http API + routes (launched by `openfde serve`);
-                            #   /api/view mirrors CLI projections (interview, datamap, assets)
+                            #   /api/view mirrors CLI projections (interview, datamap,
+                            #   assets, flows); /api/page mirrors `openfde page`
       report-page.ts        #   printable executive report page
-      index.html            #   zero-dependency workspace UI (notes + graph + views)
+      index.html            #   zero-dependency workspace UI: notes + graph + views,
+                            #   built-in mermaid flowchart renderer, Notion-style
+                            #   block editor for pages (slash menu, block tools)
 
 skills/
   openfde/                  # the agent skill: install + operate the CLI

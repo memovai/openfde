@@ -243,6 +243,69 @@
     padding: 4px 10px; user-select: none;
   }
 
+  /* mermaid flow diagrams */
+  .mermaid-wrap {
+    overflow-x: auto; margin: 12px 0; padding: 14px 10px;
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .mermaid-wrap svg { display: block; margin: 0 auto; }
+  .mm-node { cursor: pointer; }
+  .mm-node:hover rect { filter: brightness(0.97); }
+  .mm-node text { font-family: var(--font); font-size: 12px; fill: var(--text); }
+  .mm-edge-label {
+    font-family: var(--mono); font-size: 8.5px; fill: var(--text-faint);
+    paint-order: stroke; stroke: var(--bg-panel); stroke-width: 3px;
+  }
+
+  /* page block editor */
+  #note .block { position: relative; border-radius: 6px; padding: 1px 6px; margin: 0 -6px; }
+  #note .block:hover { background: rgba(0, 0, 0, 0.025); }
+  #note .block-tools {
+    position: absolute; left: -58px; top: 2px; display: none; gap: 2px;
+  }
+  #note .block:hover .block-tools { display: flex; }
+  #note .block-tools button {
+    width: 17px; height: 17px; border: none; border-radius: 4px;
+    background: none; color: var(--text-faint); cursor: pointer;
+    font-size: 10px; line-height: 1; padding: 0;
+  }
+  #note .block-tools button:hover { background: var(--bg-hover); color: var(--text); }
+  #note .block textarea {
+    width: 100%; border: none; outline: none; resize: none;
+    background: var(--accent-soft); border-radius: 6px;
+    font-family: var(--mono); font-size: 13px; line-height: 1.6;
+    color: var(--text); padding: 6px 8px; margin: 4px 0;
+  }
+  #note .block-new {
+    color: var(--text-faint); cursor: text; padding: 6px;
+    font-size: 13.5px;
+  }
+  #note .block-new:hover { color: var(--text-muted); }
+  #save-state {
+    position: absolute; top: 12px; right: 18px; z-index: 5;
+    font-size: 11px; color: var(--text-faint); user-select: none;
+    opacity: 0; transition: opacity 0.25s;
+  }
+  #save-state.visible { opacity: 1; }
+
+  /* slash menu */
+  #slash-menu {
+    position: fixed; z-index: 40; display: none; min-width: 190px;
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 4px;
+    box-shadow: 0 6px 24px rgba(40, 35, 25, 0.12);
+  }
+  #slash-menu .item {
+    display: flex; align-items: baseline; gap: 8px;
+    padding: 6px 9px; border-radius: 6px; cursor: pointer; font-size: 12.5px;
+  }
+  #slash-menu .item .k { font-family: var(--mono); font-size: 10px; color: var(--text-faint); }
+  #slash-menu .item.sel { background: var(--bg-active); }
+
+  .tree-item.add { color: var(--text-faint); font-style: normal; }
+  .tree-item.add:hover { color: var(--accent); }
+
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-thumb { background: #d6d2c6; border-radius: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -295,6 +358,7 @@
 </aside>
 
 <main id="main">
+  <div id="save-state">Saved</div>
   <div id="note-view">
     <article id="note"></article>
     <div id="note-placeholder">
@@ -308,6 +372,8 @@
     <div id="hud">drag to pan · scroll to zoom · click a node to open its note</div>
   </div>
 </main>
+
+<div id="slash-menu"></div>
 
 <script>
 "use strict";
@@ -345,6 +411,8 @@ const state = {
   selectedId: null,
   matchIds: null,
   openNoteId: null,
+  pages: [],
+  page: null,
   tx: 0, ty: 0, scale: 1,
   alpha: 0,
 };
@@ -388,17 +456,21 @@ async function loadEngagements() {
 }
 
 async function refresh() {
-  const [graph, status, tree] = await Promise.all([
+  const [graph, status, tree, pages] = await Promise.all([
     api("/api/graph", { expired: state.showExpired ? "1" : "0" }),
     api("/api/status"),
     api("/api/tree"),
+    api("/api/pages"),
   ]);
+  state.pages = pages.pages;
   mergePositions(graph);
   renderStats(status);
   renderLegend();
   renderTree(tree);
   if (state.openNoteId && state.openNoteId.startsWith("view:")) {
     openView(state.openNoteId.slice(5), { keepView: true });
+  } else if (state.openNoteId && state.openNoteId.startsWith("page:")) {
+    markActiveTreeItem(); // the block editor owns page state; never clobber edits
   } else if (state.openNoteId) {
     openNote(state.openNoteId, { keepView: true });
   } else showPlaceholder(true);
@@ -425,6 +497,7 @@ const VIEWS_SECTION = {
   groups: [{
     label: "Projections",
     items: [
+      { id: "view:flows", label: "Flows" },
       { id: "view:interview-top", label: "Interview · top-down" },
       { id: "view:interview-bottom", label: "Interview · bottom-up" },
       { id: "view:datamap", label: "Data map" },
@@ -436,7 +509,17 @@ const VIEWS_SECTION = {
 function renderTree(tree) {
   const el = document.getElementById("tree");
   el.innerHTML = "";
-  for (const section of [VIEWS_SECTION, ...tree.sections]) {
+  const pagesSection = {
+    label: "Pages",
+    groups: [{
+      label: "Documents",
+      items: [
+        ...state.pages.map((p) => ({ id: `page:${p.slug}`, label: p.title })),
+        { id: "page:+new", label: "+ New page" },
+      ],
+    }],
+  };
+  for (const section of [VIEWS_SECTION, pagesSection, ...tree.sections]) {
     const sec = document.createElement("div");
     sec.className = "tree-section";
     const head = document.createElement("div");
@@ -462,12 +545,16 @@ function renderTree(tree) {
       for (const item of group.items) {
         const it = document.createElement("div");
         it.className = "tree-item" + (item.id === state.openNoteId ? " active" : "");
+        if (item.id === "page:+new") it.classList.add("add");
         it.dataset.noteId = item.id;
         it.innerHTML =
           `<span>${escapeHtml(item.label)}</span>` +
           (item.hint ? `<span class="hint">${escapeHtml(item.hint)}</span>` : "");
         it.onclick = () =>
-          item.id.startsWith("view:") ? openView(item.id.slice(5)) : openNote(item.id);
+          item.id === "page:+new" ? newPage()
+          : item.id.startsWith("page:") ? openPage(item.id.slice(5))
+          : item.id.startsWith("view:") ? openView(item.id.slice(5))
+          : openNote(item.id);
         items.appendChild(it);
       }
       g.appendChild(items);
@@ -492,13 +579,21 @@ function showPlaceholder(show) {
 
 function showNote(data, opts = {}) {
   state.openNoteId = data.id;
+  state.page = null;
   state.selectedId = data.id.startsWith("ent_") ? data.id : null;
   document.getElementById("note").innerHTML = renderMarkdown(data.markdown);
   showPlaceholder(false);
   if (!opts.keepView) setView("notes");
   markActiveTreeItem();
   document.getElementById("note-view").scrollTop = 0;
+  hookNoteLinks();
+}
+
+function hookNoteLinks() {
   for (const el of document.querySelectorAll("#note .wikilink")) {
+    el.onclick = () => openNoteByName(el.dataset.target);
+  }
+  for (const el of document.querySelectorAll("#note .mm-node")) {
     el.onclick = () => openNoteByName(el.dataset.target);
   }
 }
@@ -525,6 +620,327 @@ async function openNoteByName(name) {
   } catch (error) {
     console.error(error);
   }
+}
+
+/* ---------------- pages: Notion-style block editor ----------------
+   A page is markdown on disk (openfde page …); here it is a list of
+   blocks. Click a block to edit its markdown, Enter commits and opens
+   the next block, "/" on an empty block opens the insert menu. */
+
+function splitBlocks(md) {
+  const lines = md.replace(/\s+$/, "").split("\n");
+  const blocks = [];
+  let i = 0;
+  const isCont = (l) => /^(- |\| |\||> |  \S)/.test(l);
+  while (i < lines.length) {
+    const line = lines[i];
+    if (line.trim() === "") { i++; continue; }
+    if (line.startsWith("```")) {
+      const buf = [line];
+      i++;
+      while (i < lines.length && !lines[i].startsWith("```")) buf.push(lines[i++]);
+      if (i < lines.length) buf.push(lines[i++]);
+      blocks.push(buf.join("\n"));
+      continue;
+    }
+    if (/^#{1,3} /.test(line) || /^---+\s*$/.test(line)) { blocks.push(line); i++; continue; }
+    const buf = [line];
+    i++;
+    while (i < lines.length && lines[i].trim() !== "" && !lines[i].startsWith("```") &&
+           !/^#{1,3} /.test(lines[i]) && (isCont(lines[i]) === isCont(line) || isCont(lines[i]))) {
+      buf.push(lines[i++]);
+    }
+    blocks.push(buf.join("\n"));
+  }
+  return blocks;
+}
+
+let saveTimer = null;
+function scheduleSave() {
+  const el = document.getElementById("save-state");
+  el.textContent = "Saving…";
+  el.classList.add("visible");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(savePage, 600);
+}
+
+async function savePage() {
+  if (!state.page) return;
+  const markdown = state.page.blocks.filter((b) => b.trim() !== "").join("\n\n") + "\n";
+  const el = document.getElementById("save-state");
+  try {
+    const url = new URL("/api/page", location.origin);
+    url.searchParams.set("engagement", state.engagement);
+    url.searchParams.set("slug", state.page.slug);
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ markdown }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error);
+    el.textContent = "Saved";
+    setTimeout(() => el.classList.remove("visible"), 1200);
+    const pages = await api("/api/pages");
+    state.pages = pages.pages;
+    const item = document.querySelector(`.tree-item[data-note-id="page:${state.page.slug}"] span`);
+    const ref = state.pages.find((p) => p.slug === state.page.slug);
+    if (item && ref) item.textContent = ref.title;
+  } catch (error) {
+    el.textContent = "Save failed";
+    console.error(error);
+  }
+}
+
+async function openPage(slug, opts = {}) {
+  try {
+    const data = await api("/api/page", { slug });
+    state.page = { slug, blocks: splitBlocks(data.markdown) };
+    state.openNoteId = `page:${slug}`;
+    state.selectedId = null;
+    showPlaceholder(false);
+    if (!opts.keepView) setView("notes");
+    markActiveTreeItem();
+    renderPage();
+    document.getElementById("note-view").scrollTop = 0;
+    if (opts.edit !== undefined) editBlock(opts.edit);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function newPage() {
+  const base = "Untitled";
+  let title = base;
+  for (let n = 2; state.pages.some((p) => p.title === title || p.slug === title.toLowerCase()); n++) {
+    title = `${base} ${n}`;
+  }
+  try {
+    const url = new URL("/api/page", location.origin);
+    url.searchParams.set("engagement", state.engagement);
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error);
+    const ref = await res.json();
+    const pages = await api("/api/pages");
+    state.pages = pages.pages;
+    renderTree(await api("/api/tree"));
+    await openPage(ref.slug, { edit: 0 });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function removePage() {
+  if (!state.page) return;
+  if (!confirm(`Delete page "${state.page.slug}"?`)) return;
+  const url = new URL("/api/page", location.origin);
+  url.searchParams.set("engagement", state.engagement);
+  url.searchParams.set("slug", state.page.slug);
+  await fetch(url, { method: "DELETE" });
+  state.page = null;
+  state.openNoteId = null;
+  showPlaceholder(true);
+  refresh();
+}
+
+function renderPage() {
+  const note = document.getElementById("note");
+  note.innerHTML = "";
+  state.page.blocks.forEach((block, i) => {
+    note.appendChild(blockEl(block, i));
+  });
+  const add = document.createElement("div");
+  add.className = "block block-new";
+  add.textContent = "Click to add a block — type / for options";
+  add.onclick = () => {
+    state.page.blocks.push("");
+    renderPage();
+    editBlock(state.page.blocks.length - 1);
+  };
+  note.appendChild(add);
+  const del = document.createElement("p");
+  del.innerHTML = `<small style="cursor:pointer" id="delete-page">Delete this page</small>`;
+  del.style.marginTop = "48px";
+  note.appendChild(del);
+  document.getElementById("delete-page").onclick = removePage;
+  hookNoteLinks();
+}
+
+function blockEl(block, i) {
+  const div = document.createElement("div");
+  div.className = "block";
+  div.dataset.i = i;
+  const tools = document.createElement("div");
+  tools.className = "block-tools";
+  for (const [glyph, act] of [["↑", "up"], ["↓", "down"], ["✕", "del"]]) {
+    const b = document.createElement("button");
+    b.textContent = glyph;
+    b.title = act === "del" ? "Delete block" : act === "up" ? "Move up" : "Move down";
+    b.onclick = (e) => {
+      e.stopPropagation();
+      const blocks = state.page.blocks;
+      if (act === "del") blocks.splice(i, 1);
+      else if (act === "up" && i > 0) [blocks[i - 1], blocks[i]] = [blocks[i], blocks[i - 1]];
+      else if (act === "down" && i < blocks.length - 1) [blocks[i + 1], blocks[i]] = [blocks[i], blocks[i + 1]];
+      renderPage();
+      scheduleSave();
+    };
+    tools.appendChild(b);
+  }
+  const body = document.createElement("div");
+  body.className = "block-body";
+  body.innerHTML = renderMarkdown(block);
+  div.appendChild(tools);
+  div.appendChild(body);
+  div.onclick = (e) => {
+    if (e.target.closest(".wikilink, .mm-node, a, button")) return;
+    editBlock(i);
+  };
+  return div;
+}
+
+function editBlock(i) {
+  const div = document.querySelector(`#note .block[data-i="${i}"]`);
+  if (!div || div.querySelector("textarea")) return;
+  const body = div.querySelector(".block-body");
+  const ta = document.createElement("textarea");
+  ta.value = state.page.blocks[i];
+  body.replaceWith(ta);
+  const fit = () => { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; };
+  ta.oninput = () => { fit(); maybeSlashMenu(ta, i); };
+  ta.onkeydown = (e) => blockKeydown(e, ta, i);
+  ta.onblur = () => {
+    setTimeout(() => {
+      if (slash.active && slash.ta === ta) return;
+      commitBlock(i, ta.value);
+    }, 120);
+  };
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+  fit();
+}
+
+function commitBlock(i, value, opts = {}) {
+  closeSlashMenu();
+  if (!state.page) return;
+  // if another block is already being edited, restore its editor after re-render
+  const otherEditor = [...document.querySelectorAll("#note .block")]
+    .find((d) => d.querySelector("textarea") && Number(d.dataset.i) !== i);
+  const removed = value.trim() === "";
+  let reopen = otherEditor ? Number(otherEditor.dataset.i) : -1;
+  if (reopen > i && removed) reopen -= 1;
+  const before = state.page.blocks[i];
+  if (removed) state.page.blocks.splice(i, 1);
+  else state.page.blocks[i] = value.replace(/\s+$/, "");
+  if (opts.insertAfter) state.page.blocks.splice(removed ? i : i + 1, 0, "");
+  renderPage();
+  if (before !== value || opts.insertAfter) scheduleSave();
+  if (opts.insertAfter) editBlock(removed ? i : i + 1);
+  else if (opts.editIndex !== undefined && opts.editIndex >= 0) editBlock(opts.editIndex);
+  else if (reopen >= 0) editBlock(reopen);
+}
+
+function blockKeydown(e, ta, i) {
+  if (slash.active) {
+    if (["ArrowDown", "ArrowUp", "Enter", "Escape", "Tab"].includes(e.key)) {
+      e.preventDefault();
+      slashKey(e.key);
+      return;
+    }
+    return;
+  }
+  const multiline = /^(```|- |> |\|)/.test(ta.value);
+  if (e.key === "Enter" && !e.shiftKey && !multiline) {
+    e.preventDefault();
+    commitBlock(i, ta.value, { insertAfter: true });
+  } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    commitBlock(i, ta.value, { insertAfter: true });
+  } else if (e.key === "Escape") {
+    e.preventDefault();
+    commitBlock(i, ta.value);
+  } else if (e.key === "Backspace" && ta.value === "") {
+    e.preventDefault();
+    commitBlock(i, "", { editIndex: i - 1 });
+  }
+}
+
+/* ---------------- slash menu ---------------- */
+const SLASH_ITEMS = [
+  { label: "Text", k: "", insert: "" },
+  { label: "Heading 1", k: "#", insert: "# " },
+  { label: "Heading 2", k: "##", insert: "## " },
+  { label: "Heading 3", k: "###", insert: "### " },
+  { label: "Bulleted list", k: "-", insert: "- " },
+  { label: "Quote", k: ">", insert: "> " },
+  { label: "Code", k: "```", insert: "```\n\n```" },
+  { label: "Mermaid diagram", k: "```mermaid", insert: '```mermaid\nflowchart LR\n  a["Start"] --> b["Done"]\n```' },
+  { label: "Divider", k: "---", insert: "---", commit: true },
+  { label: "New page", k: "+", action: "newpage" },
+];
+
+const slash = { active: false, ta: null, blockIndex: -1, sel: 0, items: [] };
+
+function maybeSlashMenu(ta, i) {
+  if (ta.value.startsWith("/")) openSlashMenu(ta, i, ta.value.slice(1));
+  else closeSlashMenu();
+}
+
+function openSlashMenu(ta, i, filter) {
+  const menu = document.getElementById("slash-menu");
+  slash.items = SLASH_ITEMS.filter((it) =>
+    it.label.toLowerCase().includes(filter.toLowerCase()));
+  if (slash.items.length === 0) { closeSlashMenu(); return; }
+  slash.active = true;
+  slash.ta = ta;
+  slash.blockIndex = i;
+  slash.sel = Math.min(slash.sel, slash.items.length - 1);
+  menu.innerHTML = "";
+  slash.items.forEach((it, idx) => {
+    const div = document.createElement("div");
+    div.className = "item" + (idx === slash.sel ? " sel" : "");
+    div.innerHTML = `<span>${escapeHtml(it.label)}</span><span class="k">${escapeHtml(it.k)}</span>`;
+    div.onpointerdown = (e) => { e.preventDefault(); applySlash(it); };
+    div.onmouseenter = () => { slash.sel = idx; openSlashMenu(ta, i, filter); };
+    menu.appendChild(div);
+  });
+  const rect = ta.getBoundingClientRect();
+  menu.style.display = "block";
+  menu.style.left = rect.left + "px";
+  menu.style.top = Math.min(rect.bottom + 4, window.innerHeight - menu.offsetHeight - 12) + "px";
+}
+
+function closeSlashMenu() {
+  slash.active = false;
+  slash.ta = null;
+  slash.sel = 0;
+  document.getElementById("slash-menu").style.display = "none";
+}
+
+function slashKey(key) {
+  if (key === "Escape") { closeSlashMenu(); return; }
+  if (key === "ArrowDown") slash.sel = (slash.sel + 1) % slash.items.length;
+  else if (key === "ArrowUp") slash.sel = (slash.sel - 1 + slash.items.length) % slash.items.length;
+  else if (key === "Enter" || key === "Tab") { applySlash(slash.items[slash.sel]); return; }
+  const ta = slash.ta;
+  openSlashMenu(ta, slash.blockIndex, ta.value.slice(1));
+}
+
+function applySlash(item) {
+  const ta = slash.ta, i = slash.blockIndex;
+  closeSlashMenu();
+  if (!ta) return;
+  if (item.action === "newpage") { commitBlock(i, ""); newPage(); return; }
+  if (item.commit) { commitBlock(i, item.insert, { insertAfter: true }); return; }
+  ta.value = item.insert;
+  ta.focus();
+  const caret = item.insert.includes("\n") ? item.insert.indexOf("\n") + 1 : item.insert.length;
+  ta.setSelectionRange(caret, caret);
+  ta.style.height = "auto";
+  ta.style.height = ta.scrollHeight + "px";
 }
 
 /* ---------------- markdown renderer ----------------
@@ -556,11 +972,13 @@ function renderMarkdown(md) {
 
     if (line.startsWith("```")) {
       closeList();
+      const info = line.slice(3).trim();
       const buf = [];
       i++;
       while (i < lines.length && !lines[i].startsWith("```")) buf.push(lines[i++]);
       i++;
-      out.push(`<pre><code>${escapeHtml(buf.join("\n"))}</code></pre>`);
+      if (info === "mermaid") out.push(renderMermaid(buf.join("\n")));
+      else out.push(`<pre><code>${escapeHtml(buf.join("\n"))}</code></pre>`);
       continue;
     }
     if (/^### /.test(line)) { closeList(); out.push(`<h3>${inlineMd(line.slice(4))}</h3>`); i++; continue; }
@@ -621,6 +1039,184 @@ function renderMarkdown(md) {
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+
+/* ---------------- mermaid flowchart renderer ----------------
+   Zero-dependency SVG renderer for the flowchart subset the server
+   emits (and the same subset humans are likely to write in pages):
+   `flowchart LR|TD`, node defs `id["Label"]:::class`, edges
+   `a -->|label| b` / `a -.->|label| b`. classDef lines are ignored;
+   classes map onto the light palette below. */
+const MM_CLASS = {
+  goal:       { fill: "#faf3dc", stroke: "#a16207" },
+  workflow:   { fill: "#eeebfa", stroke: "#6d5bd0" },
+  step:       { fill: "#f5f4fc", stroke: "#9186d8" },
+  system:     { fill: "#e9f0f7", stroke: "#3b6ea5" },
+  datasource: { fill: "#e6f2f1", stroke: "#0f766e" },
+  constraint: { fill: "#f9ebea", stroke: "#b3423a" },
+  asset:      { fill: "#e9f3ec", stroke: "#2e7d4f" },
+  pain:       { fill: "#f4ecf5", stroke: "#96609a" },
+  decision:   { fill: "#f7edef", stroke: "#b05a70" },
+  person:     { fill: "#f5f1e3", stroke: "#8f7524" },
+  "":         { fill: "#f4f2ec", stroke: "#a29d90" },
+};
+
+function parseMermaidFlow(src) {
+  const nodes = new Map();
+  const edges = [];
+  let dir = "LR";
+  const ensure = (id, label, cls) => {
+    if (!nodes.has(id)) nodes.set(id, { id, label: label ?? id, cls: cls ?? "" });
+    else if (label) Object.assign(nodes.get(id), { label, cls: cls ?? nodes.get(id).cls });
+  };
+  const nodeRe = /^([A-Za-z0-9_-]+)(?:\[\(?"?([^\]"()]*)"?\)?\]|\{"?([^}"]*)"?\})?(?::::([A-Za-z0-9_-]+))?$/;
+  const readNode = (chunk) => {
+    const m = chunk.trim().match(nodeRe);
+    if (!m) return null;
+    ensure(m[1], m[2] ?? m[3], m[4]);
+    return m[1];
+  };
+  for (let raw of src.split("\n")) {
+    const line = raw.trim();
+    if (!line || line.startsWith("classDef") || line.startsWith("class ") || line.startsWith("%%")) continue;
+    const head = line.match(/^(?:flowchart|graph)\s+(LR|RL|TD|TB)/);
+    if (head) { dir = head[1] === "TB" || head[1] === "TD" ? "TD" : "LR"; continue; }
+    const edge = line.match(/^(.*?)\s*(--+>|-\.->)\s*(?:\|([^|]*)\|\s*)?(.*)$/);
+    if (edge) {
+      const from = readNode(edge[1]);
+      const to = readNode(edge[4]);
+      if (from && to) edges.push({ from, to, label: edge[3] ?? "", dashed: edge[2].includes(".") });
+      continue;
+    }
+    readNode(line);
+  }
+  return { dir, nodes: [...nodes.values()], edges };
+}
+
+const mmMeasure = document.createElement("canvas").getContext("2d");
+function renderMermaid(src) {
+  let g;
+  try { g = parseMermaidFlow(src); } catch { g = null; }
+  if (!g || g.nodes.length === 0) {
+    return `<pre><code>${escapeHtml(src)}</code></pre>`;
+  }
+
+  // longest-path ranks (relaxation, cycle-capped)
+  const rank = new Map(g.nodes.map((n) => [n.id, 0]));
+  for (let pass = 0; pass <= g.nodes.length; pass++) {
+    let changed = false;
+    for (const e of g.edges) {
+      const r = rank.get(e.from) + 1;
+      if (r > rank.get(e.to) && r <= g.nodes.length) { rank.set(e.to, r); changed = true; }
+    }
+    if (!changed) break;
+  }
+
+  const cols = new Map();
+  for (const n of g.nodes) {
+    const r = rank.get(n.id);
+    if (!cols.has(r)) cols.set(r, []);
+    cols.get(r).push(n);
+  }
+  const order = [...cols.keys()].sort((a, b) => a - b);
+  // one barycenter pass to reduce crossings
+  const rowOf = new Map();
+  for (const r of order) {
+    const col = cols.get(r);
+    if (r !== order[0]) {
+      const score = (n) => {
+        const prevRows = g.edges.filter((e) => e.to === n.id && rowOf.has(e.from)).map((e) => rowOf.get(e.from));
+        return prevRows.length ? prevRows.reduce((a, b) => a + b, 0) / prevRows.length : 1e9;
+      };
+      col.sort((a, b) => score(a) - score(b));
+    }
+    col.forEach((n, i) => rowOf.set(n.id, i));
+  }
+
+  mmMeasure.font = "12px " + getComputedStyle(document.body).fontFamily;
+  const PADX = 13, H = 32, VGAP = 26, HGAP = 70, M = 10;
+  for (const n of g.nodes) {
+    const label = n.label.length > 34 ? n.label.slice(0, 33) + "…" : n.label;
+    n.text = label;
+    n.w = Math.max(56, Math.ceil(mmMeasure.measureText(label).width) + PADX * 2);
+    n.h = H;
+  }
+  let W, Ht;
+  if (g.dir === "LR") {
+    const colW = new Map(order.map((r) => [r, Math.max(...cols.get(r).map((n) => n.w))]));
+    const colH = new Map(order.map((r) => [r, cols.get(r).length * (H + VGAP) - VGAP]));
+    const maxH = Math.max(...colH.values());
+    let x = M;
+    for (const r of order) {
+      let y = M + (maxH - colH.get(r)) / 2;
+      for (const n of cols.get(r)) {
+        n.x = x + (colW.get(r) - n.w) / 2;
+        n.y = y;
+        y += H + VGAP;
+      }
+      x += colW.get(r) + HGAP;
+    }
+    W = x - HGAP + M;
+    Ht = maxH + M * 2;
+  } else {
+    const GAPX = 26, GAPY = 48;
+    const rowW = new Map(order.map((r) => [
+      r, cols.get(r).reduce((a, n) => a + n.w, 0) + (cols.get(r).length - 1) * GAPX,
+    ]));
+    const maxW = Math.max(...rowW.values());
+    let y = M;
+    for (const r of order) {
+      let x = M + (maxW - rowW.get(r)) / 2;
+      for (const n of cols.get(r)) {
+        n.x = x;
+        n.y = y;
+        x += n.w + GAPX;
+      }
+      y += H + GAPY;
+    }
+    W = maxW + M * 2;
+    Ht = y - GAPY + M;
+  }
+
+  const byId = new Map(g.nodes.map((n) => [n.id, n]));
+  const svg = [];
+  svg.push(`<svg viewBox="0 0 ${W} ${Ht}" width="${W}" height="${Ht}" style="max-width:100%" xmlns="http://www.w3.org/2000/svg">`);
+  svg.push(`<defs><marker id="mm-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.6 L7.4,4 L0,7.4 Z" fill="#8a8578"/></marker></defs>`);
+
+  for (const e of g.edges) {
+    const a = byId.get(e.from), b = byId.get(e.to);
+    if (!a || !b) continue;
+    const horizontal = g.dir === "LR";
+    let x1, y1, x2, y2;
+    if (horizontal) {
+      const forward = a.x + a.w <= b.x;
+      x1 = forward ? a.x + a.w : a.x;
+      y1 = a.y + a.h / 2;
+      x2 = forward ? b.x : b.x + b.w;
+      y2 = b.y + b.h / 2;
+    } else {
+      x1 = a.x + a.w / 2; y1 = a.y + a.h;
+      x2 = b.x + b.w / 2; y2 = b.y;
+    }
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    const c = horizontal
+      ? `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`
+      : `M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}`;
+    svg.push(`<path d="${c}" fill="none" stroke="#b9b4a5" stroke-width="1.1"${e.dashed ? ` stroke-dasharray="5,4"` : ""} marker-end="url(#mm-arrow)"/>`);
+    if (e.label) {
+      svg.push(`<text class="mm-edge-label" x="${mx}" y="${my - 3}" text-anchor="middle">${escapeHtml(e.label)}</text>`);
+    }
+  }
+
+  for (const n of g.nodes) {
+    const pal = MM_CLASS[n.cls] ?? MM_CLASS[""];
+    svg.push(`<g class="mm-node" data-target="${escapeHtml(n.label)}">`);
+    svg.push(`<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="7" fill="${pal.fill}" stroke="${pal.stroke}" stroke-width="1.1"/>`);
+    svg.push(`<text x="${n.x + n.w / 2}" y="${n.y + n.h / 2 + 4}" text-anchor="middle">${escapeHtml(n.text)}</text>`);
+    svg.push(`</g>`);
+  }
+  svg.push("</svg>");
+  return `<div class="mermaid-wrap">${svg.join("")}</div>`;
 }
 
 /* ---------------- sidebar: stats / legend / search ---------------- */
@@ -942,6 +1538,10 @@ canvas.addEventListener("dblclick", () => { state.tx = 0; state.ty = 0; state.sc
   if (state.engagement) await refresh();
   if (state.engagement && location.hash.startsWith("#note=")) {
     await openNoteByName(decodeURIComponent(location.hash.slice(6)));
+  } else if (state.engagement && location.hash.startsWith("#view=")) {
+    await openView(decodeURIComponent(location.hash.slice(6)));
+  } else if (state.engagement && location.hash.startsWith("#page=")) {
+    await openPage(decodeURIComponent(location.hash.slice(6)));
   }
   frame();
 })();

@@ -105,8 +105,25 @@ openfde demo <topic> --save                          # demo brief: pain, vocabul
 openfde interview --mode top-down                    # boss-session questions from graph gaps
 openfde interview --mode bottom-up                   # knowledge-mining leads
 openfde datamap                                      # who owns / trusts / depends on each data source
+openfde flows                                        # auto-extracted mermaid flow diagrams (goals, steps, blockers)
 openfde report                                       # executive report (markdown)
 ```
+
+## Pages
+
+Free-form markdown documents (runbooks, plans, deliverables) that live next
+to the ledger. Humans block-edit them in the workspace; you read and write
+the same files:
+
+```sh
+openfde page list --json
+openfde page show <slug>
+openfde page add "Rollout plan" --file ./plan.md
+openfde page edit <slug> --file ./updated.md
+```
+
+Use pages for narrative deliverables; use `remember` for facts. A fact
+buried in a page is invisible to `recall` until you record it.
 
 ## Eval and assets
 

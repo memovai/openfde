@@ -35,6 +35,11 @@ OpenFDE convierte las tres cosas en un solo sistema, empezando por la memoria.
 - **Un kit de campo para el movimiento FDE.** Investigación web con citas (`research`), briefs de demo para el día siguiente (`demo`), evaluación de aceptación por rúbrica (`eval`), biblioteca de activos lista para git (`asset`) y mapa de negociación de datos (`datamap`).
 - **Tareas trazables (dispatch agent-pull).** Las tarjetas de tarea viven en el ledger con una máquina de estados y un registro de auditoría; `openfde context <task>` ensambla el paquete de munición — restricciones primero, memoria relacionada después, todo citado.
 - **Un espacio de trabajo markdown-first al estilo Obsidian.** `openfde serve` abre una interfaz local donde cada entidad, episodio y tarea es una nota markdown — árbol jerárquico, [[wiki-enlaces]], citas en línea — más un grafo de fuerzas dirigidas y Vistas que reflejan las proyecciones de la CLI (guías de entrevista, mapa de datos, biblioteca de activos). Los humanos usan el workspace; los agents, la CLI.
+- **Diagramas de flujo auto-extraídos.** `openfde flows` convierte los hechos de workflow en diagramas mermaid — objetivos, pasos, dependencias, restricciones bloqueantes y lo que ya está automatizado — renderizados en línea en el workspace (y en GitHub), con cada arista respaldada por un hecho citado. La prosa explica entidades; los flujos explican el proceso.
+
+  ![Flujos de openfde](./docs/flows-ui.png)
+
+- **Páginas al estilo Notion.** Documentos markdown libres junto al ledger, editados por bloques en el workspace — clic para editar, `/` para insertar encabezados, listas, código, diagramas mermaid o páginas nuevas — y legibles/escribibles por agents vía `openfde page`.
 - **Un informe ejecutivo para el jefe del cliente — en vivo.** `/report` genera una página clara e imprimible que responde cuatro preguntas desde el grafo: qué podemos asumir, cuánta carga elimina, qué se reemplaza y cuánto vale — con preguntas de cuantificación generadas automáticamente donde aún faltan números. `openfde share` reparte un enlace LAN de solo lectura que se actualiza en tiempo real mientras los agents trabajan, con un feed de progreso en vivo.
 
   ![Informe ejecutivo de openfde](./docs/report-ui.png)
@@ -77,6 +82,8 @@ pnpm openfde serve                 # espacio de trabajo en :4517, informe imprim
 | `openfde eval <task> --input <file>` | Juzga el trabajo entregado contra la rúbrica de la tarea; los veredictos van al registro de auditoría y hacen crecer el dataset de evals |
 | `openfde asset add/list/show` | La biblioteca de activos: rúbricas (auto-creadas desde los criterios de la tarea), prompts, casos de eval, demos, playbooks, skills — archivos, listos para git |
 | `openfde datamap` | El mapa de negociación de datos: quién posee cada fuente, quién confía en ella, qué depende de ella |
+| `openfde flows` | Diagramas de flujo mermaid auto-extraídos: objetivos, workflows, pasos, bloqueos, automatización — cada arista es un hecho citado |
+| `openfde page add/list/show/edit/remove` | Páginas markdown libres junto al ledger; edición por bloques en el workspace, scriptables para agents |
 | `openfde interview` | Guía de entrevista generada desde los huecos del grafo — top-down (valor → flujos → puntos de decisión, la sesión con el jefe) o bottom-up (pistas de minería de conocimiento) |
 | `openfde report` | Informe ejecutivo del engagement: oportunidades, alivio de carga, cobertura de automatización, valor — cada afirmación citada |
 | `openfde serve` | Espacio de trabajo local de notas + grafo, con un informe ejecutivo imprimible en `/report` (daemon opcional — la CLI funciona sin él) |

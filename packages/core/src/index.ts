@@ -56,6 +56,13 @@ export {
 // projections (markdown views of the ledger — shared by webui and future export)
 export { buildDataMap, dataMapMarkdown, type DataSourceMap } from "./projections/datamap.js";
 export {
+  buildFlows,
+  buildOverviewFlow,
+  entityFlow,
+  flowsMarkdown,
+  type FlowDiagram,
+} from "./projections/flows.js";
+export {
   loadTree,
   entityNote,
   episodeNote,
@@ -65,6 +72,17 @@ export {
   type TreeGroup,
   type TreeItem,
 } from "./projections/notes.js";
+
+// pages (free-form markdown documents, block-edited in the webui)
+export {
+  createPage,
+  listPages,
+  readPage,
+  writePage,
+  deletePage,
+  pagesDir,
+  type PageRef,
+} from "./pages/store.js";
 
 // assets + eval (the library: rubrics, prompts, eval cases, demos)
 export {
