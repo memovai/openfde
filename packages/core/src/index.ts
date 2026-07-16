@@ -73,6 +73,16 @@ export {
   type TreeItem,
 } from "./projections/notes.js";
 
+// canvas (free-form spatial cards per engagement)
+export {
+  addCanvasCard,
+  canvasPath,
+  readCanvas,
+  writeCanvas,
+  type CanvasCard,
+  type CanvasData,
+} from "./canvas/store.js";
+
 // pages (free-form markdown documents, block-edited in the webui)
 export {
   createPage,

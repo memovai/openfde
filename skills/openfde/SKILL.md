@@ -125,6 +125,9 @@ openfde page edit <slug> --file ./updated.md
 Use pages for narrative deliverables; use `remember` for facts. A fact
 buried in a page is invisible to `recall` until you record it.
 
+The canvas (`openfde canvas show/add`) is the human's free-form thinking
+surface — read it for context; add a card only when asked.
+
 ## Eval and assets
 
 Task acceptance criteria become rubric assets automatically. When you finish

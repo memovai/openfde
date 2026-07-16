@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { readFileSync } from "node:fs";
 import {
+  addCanvasCard,
   buildDataMap,
   buildFlows,
   buildInterviewGuide,
@@ -14,18 +15,24 @@ import {
   interviewMarkdown,
   listAssets,
   listPages,
+  listTasks,
   episodeNote,
   listEngagements,
   loadTree,
   openLedger,
+  readCanvas,
   readPage,
   recall,
   resolveEngagement,
   resolveEntityByName,
   taskNote,
+  transitionTask,
+  writeCanvas,
   writePage,
+  type CanvasData,
   type InterviewMode,
   type Ledger,
+  type TaskStatus,
 } from "@openfde/core";
 import { reportPage } from "./report-page.js";
 
@@ -403,6 +410,48 @@ export function serve(options: ServeOptions): void {
           const markdown = viewMarkdown(resolveEngagement(engagementParam), kind);
           if (markdown === null) return json(res, { error: "unknown view" }, 404);
           json(res, { id: `view:${kind}`, markdown });
+          return;
+        }
+        case "/api/tasks": {
+          const db = openLedger(resolveEngagement(engagementParam));
+          try {
+            json(res, { tasks: listTasks(db) });
+          } finally {
+            db.close();
+          }
+          return;
+        }
+        case "/api/task": {
+          // mirrors `openfde task <transition>`: same state machine, same audit trail
+          if (req.method !== "POST") return json(res, { error: "method not allowed" }, 405);
+          const body = await readBody(req);
+          const db = openLedger(resolveEngagement(engagementParam));
+          try {
+            json(res, transitionTask(db, String(body.id ?? ""), String(body.to ?? "") as TaskStatus, {
+              actor: process.env.OPENFDE_ACTOR ?? "webui",
+              note: body.note ? String(body.note) : undefined,
+            }));
+          } finally {
+            db.close();
+          }
+          return;
+        }
+        case "/api/canvas": {
+          const eng = resolveEngagement(engagementParam);
+          if (req.method === "PUT") {
+            const body = await readBody(req);
+            json(res, writeCanvas(eng, { cards: (body.cards ?? []) as CanvasData["cards"] }));
+            return;
+          }
+          if (req.method === "POST") {
+            const body = await readBody(req);
+            json(res, addCanvasCard(eng, String(body.text ?? ""), {
+              x: body.x === undefined ? undefined : Number(body.x),
+              y: body.y === undefined ? undefined : Number(body.y),
+            }));
+            return;
+          }
+          json(res, readCanvas(eng));
           return;
         }
         case "/api/pages": {

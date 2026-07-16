@@ -66,7 +66,7 @@
 
   /* view switcher */
   #views {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px;
     background: var(--bg-panel); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 3px;
   }
@@ -306,6 +306,92 @@
   .tree-item.add { color: var(--text-faint); font-style: normal; }
   .tree-item.add:hover { color: var(--accent); }
 
+  /* kanban board (Todo view) */
+  #board {
+    display: none; height: 100%; overflow-x: auto; overflow-y: hidden;
+    padding: 20px 22px; gap: 14px;
+  }
+  .kb-col {
+    width: 250px; min-width: 250px; display: flex; flex-direction: column;
+    background: var(--bg-deep); border: 1px solid var(--border);
+    border-radius: 10px; max-height: 100%;
+  }
+  .kb-col.drop { border-color: var(--accent); background: var(--bg-active); }
+  .kb-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px 8px; font-size: 11px; font-weight: 650;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);
+  }
+  .kb-head .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .kb-head .n { margin-left: auto; font-weight: 400; color: var(--text-faint); }
+  .kb-cards { flex: 1; overflow-y: auto; padding: 2px 8px 10px; display: flex; flex-direction: column; gap: 8px; }
+  .kb-card {
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 11px; cursor: grab;
+    box-shadow: 0 1px 2px rgba(40, 35, 25, 0.05); font-size: 12.5px;
+  }
+  .kb-card:hover { border-color: #cfc9ba; }
+  .kb-card.dragging { opacity: 0.45; }
+  .kb-card .t { line-height: 1.45; }
+  .kb-card .m { margin-top: 6px; font-size: 10.5px; color: var(--text-faint); display: flex; gap: 8px; }
+  .kb-card .who { color: var(--accent); font-family: var(--mono); }
+  .kb-empty { color: var(--text-faint); font-size: 11.5px; text-align: center; padding: 14px 0; }
+
+  /* canvas view */
+  #canvas-wrap { display: none; height: 100%; overflow: auto; position: relative; }
+  #canvas-surface {
+    position: relative; width: 2600px; height: 1800px;
+    background-image: radial-gradient(circle, #dedacd 1px, transparent 1px);
+    background-size: 26px 26px;
+  }
+  .cv-card {
+    position: absolute; width: 260px; background: var(--bg-panel);
+    border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(40, 35, 25, 0.07);
+    font-size: 13px;
+  }
+  .cv-card.dragging { box-shadow: 0 6px 20px rgba(40, 35, 25, 0.14); opacity: 0.92; }
+  .cv-grip {
+    height: 20px; cursor: grab; border-radius: 10px 10px 0 0;
+    background: var(--bg-deep); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: flex-end; padding: 0 6px;
+  }
+  .cv-grip button {
+    border: none; background: none; color: var(--text-faint);
+    font-size: 10px; cursor: pointer; padding: 2px 4px;
+  }
+  .cv-grip button:hover { color: var(--danger); }
+  .cv-body { padding: 8px 12px; line-height: 1.55; cursor: text; overflow-wrap: break-word; }
+  .cv-body p { margin: 4px 0; }
+  .cv-body h1 { font-size: 16px; font-weight: 650; margin: 4px 0; font-family: var(--serif); }
+  .cv-body h2 { font-size: 14px; font-weight: 650; margin: 4px 0; }
+  .cv-body h3 { font-size: 13px; font-weight: 650; margin: 4px 0; color: var(--text-muted); }
+  .cv-body ul { margin: 4px 0 4px 16px; }
+  .cv-body li { list-style: disc; margin: 2px 0; }
+  .cv-body code { font-family: var(--mono); font-size: 0.86em; background: rgba(0,0,0,0.05); padding: 1px 4px; border-radius: 3px; }
+  .cv-body textarea {
+    width: 100%; border: none; outline: none; resize: none;
+    background: var(--accent-soft); border-radius: 6px;
+    font-family: var(--mono); font-size: 12px; line-height: 1.55;
+    color: var(--text); padding: 6px 8px;
+  }
+  #canvas-hint {
+    position: absolute; right: 14px; bottom: 12px; z-index: 3;
+    font-size: 11px; color: var(--text-faint);
+    background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(6px);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 4px 10px; user-select: none; pointer-events: none;
+  }
+
+  /* contextual sidebar hint for todo/canvas tabs */
+  #side-hint { flex: 1; display: none; flex-direction: column; gap: 10px; }
+  #side-hint .hint-block {
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 12px;
+    font-size: 12px; color: var(--text-muted); line-height: 1.6;
+  }
+  #side-hint code { font-family: var(--mono); font-size: 10.5px; background: var(--bg-deep); padding: 1px 5px; border-radius: 4px; }
+
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-thumb { background: #d6d2c6; border-radius: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -330,8 +416,10 @@
   <div id="results"></div>
 
   <div id="views">
-    <button id="view-notes" class="active">Notes</button>
-    <button id="view-graph">Graph</button>
+    <button id="view-notes" class="active">Note</button>
+    <button id="view-graph">Ontology</button>
+    <button id="view-todo">Todo</button>
+    <button id="view-canvas">Canvas</button>
   </div>
 
   <a id="report-link" href="/report" target="_blank">Executive report ↗</a>
@@ -349,6 +437,8 @@
       <span>Show superseded facts</span>
     </label>
   </div>
+
+  <div id="side-hint"></div>
 
   <footer>
     Feed it from the terminal:<br />
@@ -370,6 +460,11 @@
   <div id="stage">
     <canvas id="graph"></canvas>
     <div id="hud">drag to pan · scroll to zoom · click a node to open its note</div>
+  </div>
+  <div id="board"></div>
+  <div id="canvas-wrap">
+    <div id="canvas-surface"></div>
+    <div id="canvas-hint">double-click anywhere to add a card · drag by the top bar · click text to edit</div>
   </div>
 </main>
 
@@ -474,22 +569,238 @@ async function refresh() {
   } else if (state.openNoteId) {
     openNote(state.openNoteId, { keepView: true });
   } else showPlaceholder(true);
+  if (state.view === "todo") renderBoard();
+  if (state.view === "canvas" && !document.querySelector("#canvas-surface textarea")) {
+    renderCanvas();
+  }
   reheat(1);
 }
 
-/* ---------------- view switching ---------------- */
+/* ---------------- view switching ----------------
+   Four top-level tabs: Note (markdown memory), Ontology (entity
+   graph), Todo (kanban over the task state machine), Canvas
+   (free-form cards). */
+const TABS = { notes: "view-notes", graph: "view-graph", todo: "view-todo", canvas: "view-canvas" };
+
+const SIDE_HINTS = {
+  todo: `<div class="hint-block">Cards are the same task ledger agents work from. Drag a card to change its state — illegal transitions are rejected by the state machine.</div>
+    <div class="hint-block"><code>openfde task create &lt;title&gt;</code><br /><code>openfde task list --json</code><br /><code>openfde context &lt;id&gt;</code></div>`,
+  canvas: `<div class="hint-block">A free surface for the thinking that precedes structure. Double-click to add a markdown card; everything persists to the engagement directory.</div>
+    <div class="hint-block"><code>openfde canvas show</code><br /><code>openfde canvas add &lt;text&gt;</code></div>`,
+};
+
 function setView(view) {
   state.view = view;
-  document.getElementById("view-notes").classList.toggle("active", view === "notes");
-  document.getElementById("view-graph").classList.toggle("active", view === "graph");
+  for (const [v, id] of Object.entries(TABS)) {
+    document.getElementById(id).classList.toggle("active", v === view);
+  }
   document.getElementById("note-view").style.display = view === "notes" ? "block" : "none";
   document.getElementById("stage").style.display = view === "graph" ? "block" : "none";
+  document.getElementById("board").style.display = view === "todo" ? "flex" : "none";
+  document.getElementById("canvas-wrap").style.display = view === "canvas" ? "block" : "none";
   document.getElementById("tree").style.display = view === "notes" ? "block" : "none";
   document.getElementById("graph-controls").style.display = view === "graph" ? "flex" : "none";
+  const hint = document.getElementById("side-hint");
+  hint.style.display = view === "todo" || view === "canvas" ? "flex" : "none";
+  if (SIDE_HINTS[view]) hint.innerHTML = SIDE_HINTS[view];
   if (view === "graph") { resizeCanvas(); maybeFit(); }
+  if (view === "todo" && state.engagement) renderBoard();
+  if (view === "canvas" && state.engagement) renderCanvas();
 }
-document.getElementById("view-notes").onclick = () => setView("notes");
-document.getElementById("view-graph").onclick = () => setView("graph");
+for (const [view, id] of Object.entries(TABS)) {
+  document.getElementById(id).onclick = () => setView(view);
+}
+
+function toast(text) {
+  const el = document.getElementById("save-state");
+  el.textContent = text;
+  el.classList.add("visible");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove("visible"), 1600);
+}
+
+/* ---------------- Todo: kanban over the task state machine ---------------- */
+const KB_COLUMNS = ["draft", "ready", "claimed", "running", "review", "accepted", "rejected"];
+
+async function renderBoard() {
+  const data = await api("/api/tasks");
+  const board = document.getElementById("board");
+  board.innerHTML = "";
+  for (const status of KB_COLUMNS) {
+    const tasks = data.tasks.filter((t) => t.status === status);
+    // quiet edge columns stay hidden until they have cards
+    if (tasks.length === 0 && (status === "draft" || status === "rejected")) continue;
+    const col = document.createElement("div");
+    col.className = "kb-col";
+    col.innerHTML =
+      `<div class="kb-head"><span class="dot" style="background:${STATUS_COLORS[status]}"></span>` +
+      `<span>${status}</span><span class="n">${tasks.length}</span></div>`;
+    const cards = document.createElement("div");
+    cards.className = "kb-cards";
+    if (tasks.length === 0) cards.innerHTML = `<div class="kb-empty">—</div>`;
+    for (const t of tasks) {
+      const card = document.createElement("div");
+      card.className = "kb-card";
+      card.draggable = true;
+      card.innerHTML =
+        `<div class="t">${escapeHtml(t.title)}</div>` +
+        `<div class="m">${t.claimed_by ? `<span class="who">@${escapeHtml(t.claimed_by)}</span>` : ""}` +
+        `<span>${escapeHtml(t.id)}</span></div>`;
+      card.onclick = () => openNote(t.id);
+      card.ondragstart = (e) => {
+        e.dataTransfer.setData("text/plain", t.id);
+        card.classList.add("dragging");
+      };
+      card.ondragend = () => card.classList.remove("dragging");
+      cards.appendChild(card);
+    }
+    col.appendChild(cards);
+    col.ondragover = (e) => { e.preventDefault(); col.classList.add("drop"); };
+    col.ondragleave = () => col.classList.remove("drop");
+    col.ondrop = async (e) => {
+      e.preventDefault();
+      col.classList.remove("drop");
+      const id = e.dataTransfer.getData("text/plain");
+      try {
+        const url = new URL("/api/task", location.origin);
+        url.searchParams.set("engagement", state.engagement);
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ id, to: status }),
+        });
+        if (!res.ok) throw new Error((await res.json()).error);
+        toast(`${id} → ${status}`);
+      } catch (error) {
+        toast(error.message);
+      }
+      renderBoard();
+    };
+    board.appendChild(col);
+  }
+}
+
+/* ---------------- Canvas: free-form markdown cards ---------------- */
+const cv = { cards: [] };
+
+async function renderCanvas() {
+  const data = await api("/api/canvas");
+  cv.cards = data.cards;
+  drawCanvasCards();
+}
+
+function drawCanvasCards() {
+  const surf = document.getElementById("canvas-surface");
+  surf.innerHTML = "";
+  for (const card of cv.cards) surf.appendChild(cvCardEl(card));
+}
+
+function cvCardEl(card) {
+  const el = document.createElement("div");
+  el.className = "cv-card";
+  el.style.left = card.x + "px";
+  el.style.top = card.y + "px";
+  if (card.w) el.style.width = card.w + "px";
+
+  const grip = document.createElement("div");
+  grip.className = "cv-grip";
+  const del = document.createElement("button");
+  del.textContent = "✕";
+  del.title = "Delete card";
+  del.onclick = (e) => {
+    e.stopPropagation();
+    cv.cards = cv.cards.filter((c) => c.id !== card.id);
+    drawCanvasCards();
+    saveCanvasSoon();
+  };
+  grip.appendChild(del);
+
+  const body = document.createElement("div");
+  body.className = "cv-body";
+  body.innerHTML = renderMarkdown(card.text);
+  body.onclick = (e) => {
+    if (e.target.closest("textarea, a, .wikilink")) return;
+    editCvCard(card, body);
+  };
+  el.appendChild(grip);
+  el.appendChild(body);
+
+  grip.onpointerdown = (e) => {
+    if (e.target.closest("button")) return;
+    e.preventDefault();
+    grip.setPointerCapture(e.pointerId);
+    el.classList.add("dragging");
+    const sx = e.clientX, sy = e.clientY, ox = card.x, oy = card.y;
+    grip.onpointermove = (ev) => {
+      card.x = Math.max(0, ox + ev.clientX - sx);
+      card.y = Math.max(0, oy + ev.clientY - sy);
+      el.style.left = card.x + "px";
+      el.style.top = card.y + "px";
+    };
+    grip.onpointerup = () => {
+      grip.onpointermove = null;
+      grip.onpointerup = null;
+      el.classList.remove("dragging");
+      saveCanvasSoon();
+    };
+  };
+  return el;
+}
+
+function editCvCard(card, body) {
+  if (body.querySelector("textarea")) return;
+  const ta = document.createElement("textarea");
+  ta.value = card.text;
+  body.innerHTML = "";
+  body.appendChild(ta);
+  const fit = () => { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; };
+  ta.oninput = fit;
+  ta.onkeydown = (e) => { if (e.key === "Escape") ta.blur(); };
+  ta.onblur = () => {
+    card.text = ta.value.trim();
+    if (!card.text) cv.cards = cv.cards.filter((c) => c.id !== card.id);
+    drawCanvasCards();
+    saveCanvasSoon();
+  };
+  ta.focus();
+  fit();
+}
+
+let cvSaveTimer = null;
+function saveCanvasSoon() {
+  clearTimeout(cvSaveTimer);
+  cvSaveTimer = setTimeout(async () => {
+    try {
+      const url = new URL("/api/canvas", location.origin);
+      url.searchParams.set("engagement", state.engagement);
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ cards: cv.cards }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      toast("Saved");
+    } catch (error) {
+      toast("Save failed");
+      console.error(error);
+    }
+  }, 400);
+}
+
+document.getElementById("canvas-surface").ondblclick = (e) => {
+  if (e.target.closest(".cv-card")) return;
+  const rect = document.getElementById("canvas-surface").getBoundingClientRect();
+  const card = {
+    id: "card_" + Math.random().toString(16).slice(2, 10),
+    x: Math.max(0, e.clientX - rect.left - 10),
+    y: Math.max(0, e.clientY - rect.top - 10),
+    text: "",
+  };
+  cv.cards.push(card);
+  drawCanvasCards();
+  const el = document.getElementById("canvas-surface").lastElementChild;
+  editCvCard(card, el.querySelector(".cv-body"));
+};
 
 /* ---------------- tree ---------------- */
 const VIEWS_SECTION = {
@@ -1591,7 +1902,8 @@ canvas.addEventListener("dblclick", () => { state.tx = 0; state.ty = 0; state.sc
 /* ---------------- boot ---------------- */
 (async function boot() {
   resizeCanvas();
-  setView(location.hash === "#graph" ? "graph" : "notes");
+  const hashView = { "#graph": "graph", "#ontology": "graph", "#todo": "todo", "#canvas": "canvas" }[location.hash];
+  setView(hashView ?? "notes");
   await loadEngagements();
   if (state.engagement) await refresh();
   if (state.engagement && location.hash.startsWith("#note=")) {

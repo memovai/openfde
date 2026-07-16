@@ -34,7 +34,7 @@ OpenFDE 把这三样变成一个系统，从记忆开始。
 - **Agent 原生。** 所有命令支持 `--json`。在 agent 指令里加几行，它就能在任务中查询记忆、认领任务、回写发现。
 - **FDE 作战工具箱。** 带引用的联网调研（`research`）、隔天 demo 简报（`demo`）、rubric 验收判分（`eval`）、git 就绪的资产库（`asset`）、数据谈判地图（`datamap`）。
 - **可追溯的任务（agent-pull 派发）。** 任务卡存在 ledger 里，带状态机和审计事件流；`openfde context <task>` 组装弹药包——约束置顶、相关记忆随后、全部带引用。
-- **Markdown 为主、Obsidian 风格的工作区。** `openfde serve` 打开本地界面：每个实体、episode 和任务都是一篇 Markdown 笔记——分层树、[[双链]]、行内引用；外加力导向图和与 CLI 投影一一对应的视图（访谈指南、数据地图、资产库）。人用工作区，agent 用 CLI。
+- **Markdown 为主、Obsidian 风格的工作区，四个顶层 tab。** `openfde serve` 打开本地界面：**Note**（每个实体、episode、任务都是一篇 Markdown 笔记——分层树、[[双链]]、行内引用，外加与 CLI 投影一一对应的视图）、**Ontology**（确定性分层布局的实体图）、**Todo**（任务状态机之上的看板——拖卡片即转移状态，非法转移被拒绝）、**Canvas**（自由 Markdown 卡片画布，承载结构化之前的思考）。人用工作区，agent 用 CLI。
 - **自动抽取的流程图。** `openfde flows` 把工作流事实变成 mermaid 流程图——目标、步骤、依赖、阻塞约束、已有的自动化——在工作区（以及 GitHub 上）内联渲染，每条边都对应一条有出处的事实。文字解释实体，流程图解释过程。
 
   ![openfde 流程图](./docs/flows-ui.png)
@@ -82,6 +82,7 @@ pnpm openfde serve                 # 工作区 :4517，可打印报告在 /repor
 | `openfde eval <task> --input <file>` | 按任务 rubric 判分提交的工作；裁决进审计流并沉淀 eval 数据集 |
 | `openfde asset add/list/show` | 资产库：rubric（建任务时自动生成）、prompt、eval 用例、demo、playbook、skill——文件形态，git 就绪 |
 | `openfde datamap` | 数据谈判地图：每个数据源谁拥有、谁信任、什么依赖它 |
+| `openfde canvas show/add` | Engagement 的自由卡片画布（在 webui 的 Canvas tab 里拖拽编辑） |
 | `openfde flows` | 自动抽取的 mermaid 流程图：目标、工作流、步骤、阻塞、自动化——每条边都是有出处的事实 |
 | `openfde page add/list/show/edit/remove` | 与账本并存的自由 Markdown 页面；工作区里按块编辑，agent 可脚本化读写 |
 | `openfde interview` | 从图谱缺口生成访谈指南——自上而下（价值→业务流→决策点，老板场）或自下而上（知识挖掘线索） |

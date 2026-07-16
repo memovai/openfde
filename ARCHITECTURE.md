@@ -59,6 +59,8 @@ packages/
         flows.ts            #   auto-extracted mermaid flow diagrams (goals/steps/blockers)
       pages/                # free-form markdown documents next to the ledger
         store.ts            #   create/list/read/write/delete; block-edited in the webui
+      canvas/               # free-form spatial cards per engagement
+        store.ts            #   canvas.json read/write; drag-edited in the webui
       report/               # executive projections
         build.ts            #   derive the four boss questions from the ledger
         markdown.ts         #   markdown rendering
@@ -68,11 +70,14 @@ packages/
     src/
       server.ts             #   node:http API + routes (launched by `openfde serve`);
                             #   /api/view mirrors CLI projections (interview, datamap,
-                            #   assets, flows); /api/page mirrors `openfde page`
+                            #   assets, flows); /api/page|canvas|task mirror the
+                            #   corresponding CLI verbs
       report-page.ts        #   printable executive report page
-      index.html            #   zero-dependency workspace UI: notes + graph + views,
-                            #   built-in mermaid flowchart renderer, Notion-style
-                            #   block editor for pages (slash menu, block tools)
+      index.html            #   zero-dependency workspace UI, four tabs:
+                            #   Note (markdown notes + views + Notion-style block
+                            #   editor with slash menu), Ontology (layered entity
+                            #   graph), Todo (kanban over the task state machine),
+                            #   Canvas (free-form cards); built-in mermaid renderer
 
 skills/
   openfde/                  # the agent skill: install + operate the CLI
