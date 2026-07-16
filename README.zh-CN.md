@@ -34,7 +34,7 @@ OpenFDE 把这三样变成一个系统，从记忆开始。
 - **Agent 原生。** 所有命令支持 `--json`。在 agent 指令里加几行，它就能在任务中查询记忆、认领任务、回写发现。
 - **FDE 作战工具箱。** 带引用的联网调研（`research`）、隔天 demo 简报（`demo`）、rubric 验收判分（`eval`）、git 就绪的资产库（`asset`）、数据谈判地图（`datamap`）。
 - **可追溯的任务（agent-pull 派发）。** 任务卡存在 ledger 里，带状态机和审计事件流；`openfde context <task>` 组装弹药包——约束置顶、相关记忆随后、全部带引用。
-- **Markdown 为主、Obsidian 风格的工作区。** `openfde serve` 打开本地界面：每个实体、episode 和任务都是一篇 Markdown 笔记——分层树、实体间 [[双链]]、行内引用溯源；力导向图作为伴生视图（点击节点即打开笔记）。
+- **Markdown 为主、Obsidian 风格的工作区。** `openfde serve` 打开本地界面：每个实体、episode 和任务都是一篇 Markdown 笔记——分层树、[[双链]]、行内引用；外加力导向图和与 CLI 投影一一对应的视图（访谈指南、数据地图、资产库）。人用工作区，agent 用 CLI。
 - **给客户老板的高管报告——实时的。** `/report` 渲染一页浅色可打印的报告，用图谱回答四个问题：能接手什么、减负多少、取代什么、价值多少——缺数字的地方自动生成量化问题。`openfde share` 生成局域网只读链接，agent 干活时页面实时更新，并带实时进展流。
 
   ![openfde 高管报告](./docs/report-ui.png)
@@ -84,24 +84,22 @@ pnpm openfde serve                 # 工作区 :4517，可打印报告在 /repor
 
 ## Agent 集成
 
-在你的 `CLAUDE.md` / `AGENTS.md` 里加上：
+人用 Web 工作区；**agent 用 CLI，以 skill 形态安装**：
 
-```
-用 `openfde recall <query> --json` 查询客户 engagement 记忆。
-领任务：`openfde task list --status ready --json`，然后
-`openfde task claim <id>`，开工前先 `openfde context <id>`。
-用 `openfde remember "<fact>" --source <uri>` 记录新发现。
-用 `openfde task update <id> --note "..."` 汇报进展；完成用 `openfde task done <id>`。
+```sh
+cp -r skills/openfde ~/.claude/skills/openfde     # 用户级
+# 或：cp -r skills/openfde .claude/skills/openfde  # 项目级
 ```
 
-就这些——任何能跑 shell 的 agent 都能使用 FDE 记忆。没有协议层，不需要配置。
+[`skills/openfde/SKILL.md`](./skills/openfde/SKILL.md) 写清了 CLI 本身的安装方法和完整作业环路（找活 → 认领 → 拉上下文 → 执行 → 回写 → eval）。任何能跑 shell 的 agent 都能用——没有协议层，不需要配置。
 
 ## 仓库结构
 
 ```
 packages/ontology   FDE 领域本体（Zod，单一事实源）
 packages/core       Ledger：engagement / 记忆 / 派发 / 投影 / 报告
-packages/webui      可选本地工作区（笔记 + 图谱 + 高管报告）
+packages/webui      可选本地工作区（笔记 + 图谱 + 视图 + 高管报告）
+skills/openfde      Agent skill：CLI 的安装与用法
 apps/cli            openfde 命令（人和 agent 共用入口）
 ```
 

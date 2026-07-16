@@ -1,8 +1,13 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { readFileSync } from "node:fs";
 import {
+  buildDataMap,
+  buildInterviewGuide,
   buildReport,
+  dataMapMarkdown,
   entityNote,
+  interviewMarkdown,
+  listAssets,
   episodeNote,
   listEngagements,
   loadTree,
@@ -11,6 +16,7 @@ import {
   resolveEngagement,
   resolveEntityByName,
   taskNote,
+  type InterviewMode,
   type Ledger,
 } from "@openfde/core";
 import { reportPage } from "./report-page.js";
@@ -88,6 +94,46 @@ function loadStatus(slug: string) {
         "SELECT count(*) AS n FROM tasks WHERE status NOT IN ('accepted','rejected')",
       ),
     };
+  } finally {
+    db.close();
+  }
+}
+
+function assetsMarkdown(slug: string): string {
+  const refs = listAssets(slug);
+  const md = [`# Asset library — ${slug}`, ""];
+  if (refs.length === 0) {
+    md.push("_No assets yet. They accrue from task criteria (rubrics), `openfde demo --save`, evals, and `openfde asset add`._");
+    return md.join("\n");
+  }
+  let currentType = "";
+  for (const ref of refs) {
+    if (ref.type !== currentType) {
+      currentType = ref.type;
+      md.push(`## ${currentType}s`, "");
+    }
+    md.push(`### ${ref.name}`, "", readFileSync(ref.path, "utf8").trim(), "", `<small>${ref.path}</small>`, "");
+  }
+  return md.join("\n");
+}
+
+/** Human-facing projections mirroring the CLI verbs (webui/CLI correspondence) */
+function viewMarkdown(slug: string, kind: string): string | null {
+  const db = openLedger(slug);
+  try {
+    switch (kind) {
+      case "interview-top":
+      case "interview-bottom": {
+        const mode: InterviewMode = kind === "interview-top" ? "top-down" : "bottom-up";
+        return interviewMarkdown(buildInterviewGuide(db, slug, mode));
+      }
+      case "datamap":
+        return dataMapMarkdown(buildDataMap(db), slug);
+      case "assets":
+        return assetsMarkdown(slug);
+      default:
+        return null;
+    }
   } finally {
     db.close();
   }
@@ -330,6 +376,13 @@ export function serve(options: ServeOptions): void {
           } finally {
             db.close();
           }
+          return;
+        }
+        case "/api/view": {
+          const kind = url.searchParams.get("kind") ?? "";
+          const markdown = viewMarkdown(resolveEngagement(engagementParam), kind);
+          if (markdown === null) return json(res, { error: "unknown view" }, 404);
+          json(res, { id: `view:${kind}`, markdown });
           return;
         }
         case "/api/search": {

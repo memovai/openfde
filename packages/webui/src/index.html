@@ -203,6 +203,15 @@
   #note hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
   #note small { color: var(--text-faint); font-size: 11px; word-break: break-all; }
   #note del { color: var(--text-faint); }
+  #note .table-wrap { overflow-x: auto; margin: 10px 0; }
+  #note table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  #note th, #note td {
+    border: 1px solid var(--border); padding: 6px 10px; text-align: left;
+  }
+  #note th {
+    background: var(--bg-panel); font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--text-muted);
+  }
   #note .wikilink {
     color: var(--accent); cursor: pointer; text-decoration: none;
     border-bottom: 1px dashed rgba(127, 109, 242, 0.45);
@@ -386,8 +395,11 @@ async function refresh() {
   renderStats(status);
   renderLegend();
   renderTree(tree);
-  if (state.openNoteId) openNote(state.openNoteId, { keepView: true });
-  else showPlaceholder(true);
+  if (state.openNoteId && state.openNoteId.startsWith("view:")) {
+    openView(state.openNoteId.slice(5), { keepView: true });
+  } else if (state.openNoteId) {
+    openNote(state.openNoteId, { keepView: true });
+  } else showPlaceholder(true);
   reheat(1);
 }
 
@@ -406,10 +418,23 @@ document.getElementById("view-notes").onclick = () => setView("notes");
 document.getElementById("view-graph").onclick = () => setView("graph");
 
 /* ---------------- tree ---------------- */
+const VIEWS_SECTION = {
+  label: "Views",
+  groups: [{
+    label: "Projections",
+    items: [
+      { id: "view:interview-top", label: "Interview · top-down" },
+      { id: "view:interview-bottom", label: "Interview · bottom-up" },
+      { id: "view:datamap", label: "Data map" },
+      { id: "view:assets", label: "Asset library" },
+    ],
+  }],
+};
+
 function renderTree(tree) {
   const el = document.getElementById("tree");
   el.innerHTML = "";
-  for (const section of tree.sections) {
+  for (const section of [VIEWS_SECTION, ...tree.sections]) {
     const sec = document.createElement("div");
     sec.className = "tree-section";
     const head = document.createElement("div");
@@ -439,7 +464,8 @@ function renderTree(tree) {
         it.innerHTML =
           `<span>${escapeHtml(item.label)}</span>` +
           (item.hint ? `<span class="hint">${escapeHtml(item.hint)}</span>` : "");
-        it.onclick = () => openNote(item.id);
+        it.onclick = () =>
+          item.id.startsWith("view:") ? openView(item.id.slice(5)) : openNote(item.id);
         items.appendChild(it);
       }
       g.appendChild(items);
@@ -478,6 +504,14 @@ function showNote(data, opts = {}) {
 async function openNote(id, opts = {}) {
   try {
     showNote(await api("/api/note", { id }), opts);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function openView(kind, opts = {}) {
+  try {
+    showNote(await api("/api/view", { kind }), opts);
   } catch (error) {
     console.error(error);
   }
@@ -551,6 +585,24 @@ function renderMarkdown(md) {
       const buf = [];
       while (i < lines.length && lines[i].startsWith("> ")) buf.push(inlineMd(lines[i++].slice(2)));
       out.push(`<blockquote>${buf.join("<br />")}</blockquote>`);
+      continue;
+    }
+
+    if (line.startsWith("|")) {
+      closeList();
+      const rows = [];
+      while (i < lines.length && lines[i].startsWith("|")) rows.push(lines[i++]);
+      const cells = (row) => row.replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+      const isSep = (row) => /^\|[\s\-:|]+\|?$/.test(row);
+      const hasHeader = rows.length > 1 && isSep(rows[1]);
+      const body = rows.filter((r) => !isSep(r));
+      const html = ["<div class=\"table-wrap\"><table>"];
+      body.forEach((row, idx) => {
+        const tag = hasHeader && idx === 0 ? "th" : "td";
+        html.push("<tr>" + cells(row).map((c) => `<${tag}>${inlineMd(c)}</${tag}>`).join("") + "</tr>");
+      });
+      html.push("</table></div>");
+      out.push(html.join(""));
       continue;
     }
 

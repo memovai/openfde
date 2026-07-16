@@ -34,7 +34,7 @@ OpenFDE convierte las tres cosas en un solo sistema, empezando por la memoria.
 - **Nativo para agents.** Todos los comandos soportan `--json`. Añade unas líneas a las instrucciones de tu agent y podrá consultar la memoria, reclamar tareas y devolver hallazgos en plena tarea.
 - **Un kit de campo para el movimiento FDE.** Investigación web con citas (`research`), briefs de demo para el día siguiente (`demo`), evaluación de aceptación por rúbrica (`eval`), biblioteca de activos lista para git (`asset`) y mapa de negociación de datos (`datamap`).
 - **Tareas trazables (dispatch agent-pull).** Las tarjetas de tarea viven en el ledger con una máquina de estados y un registro de auditoría; `openfde context <task>` ensambla el paquete de munición — restricciones primero, memoria relacionada después, todo citado.
-- **Un espacio de trabajo markdown-first al estilo Obsidian.** `openfde serve` abre una interfaz local donde cada entidad, episodio y tarea es una nota markdown — árbol jerárquico, [[wiki-enlaces]] entre entidades, citas en línea — con un grafo de fuerzas dirigidas como vista complementaria (haz clic en un nodo para abrir su nota).
+- **Un espacio de trabajo markdown-first al estilo Obsidian.** `openfde serve` abre una interfaz local donde cada entidad, episodio y tarea es una nota markdown — árbol jerárquico, [[wiki-enlaces]], citas en línea — más un grafo de fuerzas dirigidas y Vistas que reflejan las proyecciones de la CLI (guías de entrevista, mapa de datos, biblioteca de activos). Los humanos usan el workspace; los agents, la CLI.
 - **Un informe ejecutivo para el jefe del cliente — en vivo.** `/report` genera una página clara e imprimible que responde cuatro preguntas desde el grafo: qué podemos asumir, cuánta carga elimina, qué se reemplaza y cuánto vale — con preguntas de cuantificación generadas automáticamente donde aún faltan números. `openfde share` reparte un enlace LAN de solo lectura que se actualiza en tiempo real mientras los agents trabajan, con un feed de progreso en vivo.
 
   ![Informe ejecutivo de openfde](./docs/report-ui.png)
@@ -84,24 +84,22 @@ pnpm openfde serve                 # espacio de trabajo en :4517, informe imprim
 
 ## Integración con agents
 
-Añade a tu `CLAUDE.md` / `AGENTS.md`:
+Los humanos usan el espacio de trabajo web; **los agents usan la CLI, instalada como skill**:
 
-```
-Consulta la memoria del engagement con `openfde recall <query> --json`.
-Toma trabajo: `openfde task list --status ready --json`, luego
-`openfde task claim <id>` y `openfde context <id>` antes de empezar.
-Registra nuevos hallazgos con `openfde remember "<fact>" --source <uri>`.
-Reporta progreso con `openfde task update <id> --note "..."`; termina con `openfde task done <id>`.
+```sh
+cp -r skills/openfde ~/.claude/skills/openfde     # ámbito de usuario
+# o: cp -r skills/openfde .claude/skills/openfde   # ámbito de proyecto
 ```
 
-Eso es todo — cualquier agent que ejecute comandos de shell puede usar la memoria FDE. Sin capa de protocolo, sin configuración.
+[`skills/openfde/SKILL.md`](./skills/openfde/SKILL.md) documenta la instalación de la propia CLI y el bucle operativo completo (encontrar trabajo → reclamar → contexto → ejecutar → devolver → eval). Cualquier agent que ejecute comandos de shell puede usarla — sin capa de protocolo, sin configuración.
 
 ## Estructura del repositorio
 
 ```
 packages/ontology   Ontología del dominio FDE (Zod, fuente única de verdad)
 packages/core       Ledger: engagements / memoria / dispatch / proyecciones / informes
-packages/webui      Espacio de trabajo local opcional (notas + grafo + informe ejecutivo)
+packages/webui      Espacio de trabajo local opcional (notas + grafo + vistas + informe ejecutivo)
+skills/openfde      El skill del agent: cómo instalar y operar la CLI
 apps/cli            El comando openfde (punto de entrada compartido para humanos y agents)
 ```
 

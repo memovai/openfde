@@ -60,9 +60,14 @@ packages/
 
   webui/                    # @openfde/webui — the optional local workspace
     src/
-      server.ts             #   node:http API + routes (launched by `openfde serve`)
+      server.ts             #   node:http API + routes (launched by `openfde serve`);
+                            #   /api/view mirrors CLI projections (interview, datamap, assets)
       report-page.ts        #   printable executive report page
-      index.html            #   zero-dependency workspace UI (notes + graph)
+      index.html            #   zero-dependency workspace UI (notes + graph + views)
+
+skills/
+  openfde/                  # the agent skill: install + operate the CLI
+    SKILL.md                #   humans use the webui; agents use this
 
 apps/
   cli/                      # the `openfde` command
@@ -90,5 +95,5 @@ apps/
 2. **Provenance is a schema constraint.** Nothing enters the ledger without a `source_uri`; every projection carries citations.
 3. **Facts supersede, never delete.** Bi-temporal columns power handoff timelines and audits.
 4. **No LLM on the read path.** Recall, context bundles, notes, and reports are deterministic ledger projections; LLMs act only on the write path, constrained by the ontology.
-5. **The CLI is the API.** Anything an agent needs must be reachable as a CLI verb with `--json`; `@openfde/webui` renders projections and never grows capabilities the CLI lacks.
+5. **The CLI is the API; the webui is its mirror.** Anything an agent needs must be reachable as a CLI verb with `--json` (taught via `skills/openfde/SKILL.md`); every CLI read-surface has a webui projection for humans, and the webui never grows capabilities the CLI lacks.
 6. **Engagements are directories.** Isolation, handoff, backup, and deletion are filesystem operations.
