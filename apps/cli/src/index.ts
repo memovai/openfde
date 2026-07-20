@@ -19,6 +19,7 @@ import { registerReport } from "./commands/report.js";
 import { registerStatus } from "./commands/status.js";
 import { registerServe } from "./commands/serve.js";
 import { registerShare } from "./commands/share.js";
+import { registerWhoknows } from "./commands/whoknows.js";
 
 const program = new Command();
 program
@@ -33,6 +34,7 @@ registerIngest(program);
 registerExtract(program);
 registerRecall(program);
 registerRemember(program);
+registerWhoknows(program);
 registerTask(program);
 registerContext(program);
 registerResearch(program);

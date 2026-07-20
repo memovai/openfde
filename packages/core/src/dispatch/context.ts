@@ -1,5 +1,5 @@
 import type { Ledger } from "../ledger/database.js";
-import { recall, type RecallHit } from "../ledger/recall.js";
+import { matchingEpisodes, recall, type EpisodeMatch, type RecallHit } from "../ledger/recall.js";
 import { getTask, type TaskRow } from "./tasks.js";
 
 /**
@@ -15,6 +15,8 @@ export interface TaskContext {
   constraints: RecallHit[];
   /** Memory related to the task title/description */
   related: RecallHit[];
+  /** Ingested-but-unextracted material matching the task — a "run extract" signal */
+  pendingEpisodes: EpisodeMatch[];
 }
 
 export function buildTaskContext(db: Ledger, taskId: string, limit = 15): TaskContext {
@@ -49,14 +51,17 @@ export function buildTaskContext(db: Ledger, taskId: string, limit = 15): TaskCo
       validFrom: row.validFrom,
       expired: false,
       invalidatedBy: null,
+      score: 1,
+      via: ["constraint"],
       };
     }) as RecallHit[];
 
   const query = [task.title, task.description ?? ""].join(" ").trim();
   const constraintIds = new Set(constraints.map((c) => c.factId));
   const related = recall(db, query, { limit }).filter((h) => !constraintIds.has(h.factId));
+  const pendingEpisodes = matchingEpisodes(db, query, { pendingOnly: true });
 
-  return { task, constraints, related };
+  return { task, constraints, related, pendingEpisodes };
 }
 
 function contextBullet(hit: RecallHit): string {
@@ -88,6 +93,15 @@ export function contextMarkdown(context: TaskContext): string {
   md.push(`## Related memory (${related.length})`, "");
   if (related.length === 0) md.push("_No related facts found. Consider `openfde recall` with other terms._");
   for (const hit of related) md.push(contextBullet(hit), "");
+
+  if (context.pendingEpisodes.length > 0) {
+    md.push(`## Unextracted material matches this task (${context.pendingEpisodes.length})`, "");
+    md.push("Run `openfde extract` before relying on the memory above being complete:", "");
+    for (const ep of context.pendingEpisodes) {
+      md.push(`- ${ep.sourceUri} — "${ep.snippet.slice(0, 90)}"`);
+    }
+    md.push("");
+  }
 
   md.push(
     "---",

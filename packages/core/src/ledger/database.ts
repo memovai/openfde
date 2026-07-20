@@ -1,5 +1,6 @@
 import Database from "better-sqlite3";
 import { ledgerDbPath, engagementDir, ensureDir } from "../engagement/paths.js";
+import { cjkSegment } from "./search.js";
 
 export type Ledger = Database.Database;
 
@@ -89,6 +90,11 @@ CREATE VIRTUAL TABLE IF NOT EXISTS fact_fts USING fts5(
 CREATE VIRTUAL TABLE IF NOT EXISTS entity_fts USING fts5(
   name, summary, entity_id UNINDEXED
 );
+-- Raw episode content is keyword-searchable the moment it lands,
+-- before any extraction runs (exact error strings, flag names, hosts)
+CREATE VIRTUAL TABLE IF NOT EXISTS episode_fts USING fts5(
+  content, episode_id UNINDEXED
+);
 `;
 
 export function openLedger(slug: string): Ledger {
@@ -109,7 +115,24 @@ export function openLedger(slug: string): Ledger {
       /* column already exists */
     }
   }
+  backfillEpisodeFts(db);
   return db;
+}
+
+/** Pre-existing ledgers get their raw episodes indexed on first open */
+function backfillEpisodeFts(db: Ledger): void {
+  const missing = db
+    .prepare(
+      `SELECT id, content FROM episodes
+       WHERE id NOT IN (SELECT episode_id FROM episode_fts)`,
+    )
+    .all() as { id: string; content: string }[];
+  if (missing.length === 0) return;
+  const insert = db.prepare(`INSERT INTO episode_fts (content, episode_id) VALUES (?, ?)`);
+  const run = db.transaction(() => {
+    for (const row of missing) insert.run(cjkSegment(row.content), row.id);
+  });
+  run();
 }
 
 export function newId(prefix: string): string {

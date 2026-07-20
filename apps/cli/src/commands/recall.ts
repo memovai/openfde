@@ -1,5 +1,11 @@
 import type { Command } from "commander";
-import { openLedger, recall, resolveEngagement, type RecallHit } from "@openfde/core";
+import {
+  matchingEpisodes,
+  openLedger,
+  recall,
+  resolveEngagement,
+  type RecallHit,
+} from "@openfde/core";
 import { fail } from "../lib/helpers.js";
 
 export function registerRecall(program: Command): void {
@@ -36,20 +42,28 @@ export function registerRecall(program: Command): void {
         try {
           const slug = resolveEngagement(options.engagement);
           const db = openLedger(slug);
-          const hits = recall(db, query.join(" "), {
+          const q = query.join(" ");
+          const hits = recall(db, q, {
             mode: options.mode as "default" | "handoff",
             limit: Number(options.limit),
           });
+          const pending = matchingEpisodes(db, q, { pendingOnly: true });
           db.close();
           if (options.json) {
-            console.log(JSON.stringify({ engagement: slug, hits }));
+            console.log(JSON.stringify({ engagement: slug, hits, pendingEpisodes: pending }));
             return;
           }
-          if (hits.length === 0) {
+          if (hits.length === 0 && pending.length === 0) {
             console.log("No hits. Try different keywords, or run openfde extract first");
             return;
           }
-          console.log(hits.map(renderHit).join("\n\n"));
+          if (hits.length > 0) console.log(hits.map(renderHit).join("\n\n"));
+          if (pending.length > 0) {
+            console.log(
+              `\n${pending.length} unextracted episode(s) also match — run \`openfde extract\`:`,
+            );
+            for (const ep of pending) console.log(`  ${ep.sourceUri}  "${ep.snippet.slice(0, 80)}"`);
+          }
         } catch (error) {
           fail(error);
         }

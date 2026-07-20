@@ -27,7 +27,13 @@ export {
   type ExtractionStats,
 } from "./ledger/ingest.js";
 export { resolveEntity, resolveFact } from "./ledger/resolve.js";
-export { recall, type RecallHit, type RecallOptions } from "./ledger/recall.js";
+export {
+  recall,
+  matchingEpisodes,
+  type RecallHit,
+  type RecallOptions,
+  type EpisodeMatch,
+} from "./ledger/recall.js";
 
 // extraction
 export { AnthropicExtractor } from "./extraction/anthropic.js";
@@ -62,6 +68,12 @@ export {
   flowsMarkdown,
   type FlowDiagram,
 } from "./projections/flows.js";
+export {
+  buildWhoKnows,
+  whoKnowsMarkdown,
+  type Expert,
+  type ExpertEvidence,
+} from "./projections/whoknows.js";
 export {
   loadTree,
   entityNote,

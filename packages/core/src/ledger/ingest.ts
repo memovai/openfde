@@ -3,6 +3,7 @@ import type { Ledger } from "./database.js";
 import { newId, nowIso } from "./database.js";
 import type { Extractor } from "../extraction/extractor.js";
 import { resolveEntity, resolveFact } from "./resolve.js";
+import { cjkSegment } from "./search.js";
 
 export interface IngestInput {
   kind: EpisodeKind;
@@ -51,6 +52,11 @@ export function ingestEpisode(db: Ledger, input: IngestInput): string {
     input.mediaPath ?? null,
     input.mediaType ?? null,
     nowIso(),
+  );
+  // raw content is searchable immediately, before extraction runs
+  db.prepare(`INSERT INTO episode_fts (content, episode_id) VALUES (?, ?)`).run(
+    cjkSegment(input.content),
+    id,
   );
   return id;
 }

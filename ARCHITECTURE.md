@@ -32,9 +32,12 @@ packages/
         store.ts            #   create / list / use / resolve
       ledger/               # the memory engine
         database.ts         #   SQLite schema (episodes, entities, facts, tasks)
-        ingest.ts           #   provenance-enforced episode intake (text + PDF/image pointers)
+        ingest.ts           #   provenance-enforced episode intake (text + PDF/image pointers);
+                            #   raw content is FTS-indexed at ingest, before extraction
         resolve.ts          #   two-phase writes: dedupe / supersede, never delete
-        recall.ts           #   LLM-free search: FTS + 1-hop graph expansion
+        recall.ts           #   LLM-free hybrid retrieval: BM25 lexical + graph lists
+                            #   fused with RRF, recency decay, superseded penalty,
+                            #   per-source caps; matchingEpisodes for raw/pending content
         search.ts           #   FTS query building, CJK segmentation, stopwords
       extraction/           # ontology-constrained extractors
         extractor.ts        #   the Extractor interface
@@ -57,6 +60,7 @@ packages/
         notes.ts            #   tree + entity/episode/task notes, [[wiki-links]]
         datamap.ts          #   the data negotiation map (owners / trust / dependents)
         flows.ts            #   auto-extracted mermaid flow diagrams (goals/steps/blockers)
+        whoknows.ts         #   "who is the expert in Y" — evidence-cited people ranking
       pages/                # free-form markdown documents next to the ledger
         store.ts            #   create/list/read/write/delete; block-edited in the webui
       canvas/               # free-form spatial cards per engagement
@@ -101,7 +105,8 @@ apps/
 | Eval backends (Langfuse sync) | `packages/core/src/eval/` | judging shipped; optional observability backend remains |
 | Orchestrated dispatch runner (Mode A) | `packages/core/src/dispatch/runner/` | optional daemon spawning agents on `ready` tasks in git worktrees; same task table |
 | Vault export of markdown notes | `apps/cli/src/commands/export.ts` | reuse `core/src/projections/` |
-| Embedding recall (sqlite-vec) | `packages/core/src/ledger/` | additive to `recall.ts`; interface unchanged |
+| Embedding recall (sqlite-vec) | `packages/core/src/ledger/` | slots into `recall.ts` as one more ranked list in the RRF fusion — catches paraphrase the lexical lists miss; interface unchanged |
+| Answer synthesis (`openfde ask`) | `apps/cli/src/commands/ask.ts` | planner → parallel retrieval fan-out → cited synthesis; LLM stays at the answer layer, retrieval primitives stay LLM-free |
 
 ## Invariants worth keeping
 

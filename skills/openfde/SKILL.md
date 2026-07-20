@@ -84,8 +84,9 @@ engagement's trust.
 ## Memory verbs
 
 ```sh
-openfde recall <query> --json               # search facts (citations included)
+openfde recall <query> --json               # hybrid search: rank-fused, scored, citations included
 openfde recall <query> --mode handoff       # timeline incl. superseded facts
+openfde whoknows <topic> --json             # who is the expert — evidence-cited people ranking
 openfde remember "<fact>" --source <uri>    # write back; source URI is REQUIRED
 openfde ingest notes.md --kind message --speaker Wang    # files, PDFs, images
 openfde extract                              # structure pending episodes (needs API key)
@@ -96,6 +97,8 @@ Rules:
   repo path, meeting reference). Sourceless writes are rejected by design.
 - `recall` is milliseconds and LLM-free — prefer it over guessing customer
   facts from your own context.
+- When `recall` reports matching unextracted episodes, run `openfde extract`
+  before concluding the memory has nothing on the topic.
 
 ## Field tools
 

@@ -30,7 +30,7 @@ OpenFDE convierte las tres cosas en un solo sistema, empezando por la memoria.
 - **Local-first.** Un directorio SQLite por engagement (`~/.openfde/engagements/<slug>/`). Los datos del cliente nunca salen de tu máquina; traspasar un engagement es entregar un directorio.
 - **La procedencia se exige, no se recomienda.** El contenido sin URI de origen se rechaza al escribir. Cada hecho recuperado se expande hasta la cita literal de la que proviene.
 - **Memoria bitemporal.** Los hechos contradictorios se reemplazan, nunca se borran. `recall --mode handoff` reproduce la línea temporal — incluyendo lo que creías antes y qué lo sustituyó.
-- **Sin LLM en la ruta de lectura.** Búsqueda de texto completo (con segmentación CJK) más expansión de grafo a un salto, en milisegundos. El LLM solo trabaja en la escritura, restringido por una ontología de dominio fija.
+- **Sin LLM en la ruta de lectura — recuperación híbrida con fusión de rankings.** Recall fusiona varios recuperadores (BM25 léxico sobre hechos, expansión del grafo de entidades) con fusión de rango recíproco (RRF), luego aplica decaimiento por antigüedad y penalización por obsolescencia, con tope por fuente — ningún scorer se fía por sí solo. El contenido crudo de los episodios es buscable en cuanto llega, antes de la extracción, así que las cadenas de error literales siempre coinciden. Todo en milisegundos; el LLM solo trabaja en la escritura, restringido por una ontología de dominio fija.
 - **Nativo para agents.** Todos los comandos soportan `--json`. Añade unas líneas a las instrucciones de tu agent y podrá consultar la memoria, reclamar tareas y devolver hallazgos en plena tarea.
 - **Un kit de campo para el movimiento FDE.** Investigación web con citas (`research`), briefs de demo para el día siguiente (`demo`), evaluación de aceptación por rúbrica (`eval`), biblioteca de activos lista para git (`asset`) y mapa de negociación de datos (`datamap`).
 - **Tareas trazables (dispatch agent-pull).** Las tarjetas de tarea viven en el ledger con una máquina de estados y un registro de auditoría; `openfde context <task>` ensambla el paquete de munición — restricciones primero, memoria relacionada después, todo citado.
@@ -74,6 +74,7 @@ pnpm openfde serve                 # espacio de trabajo en :4517, informe imprim
 | `openfde extract` | Extracción restringida por ontología + resolución en dos fases (deduplicar / reemplazar) |
 | `openfde recall <query>` | Busca en la memoria; `--mode handoff` para la línea temporal; `--json` para agents |
 | `openfde remember <fact> --source <uri>` | Registra conocimiento descubierto en plena tarea (escritura de agents) |
+| `openfde whoknows <topic>` | Quién es el experto — personas rankeadas por propiedad, decisiones y menciones registradas, con evidencia citada |
 | `openfde task create/list/claim/start/done/accept` | Tarjetas de tarea trazables: máquina de estados + registro de auditoría (dispatch agent-pull) |
 | `openfde context <task>` | Ensambla el paquete de memoria de una tarea: restricciones + hechos relacionados, todo citado |
 | `openfde status` | Resumen de memoria del engagement actual |

@@ -30,7 +30,7 @@ OpenFDE turns all three into one system, starting with memory.
 - **Local-first.** One SQLite directory per engagement (`~/.openfde/engagements/<slug>/`). Customer data never leaves your machine; handing off an engagement means handing over a directory.
 - **Provenance is enforced, not encouraged.** Content without a source URI is rejected at write time. Every recalled fact expands to the verbatim quote it came from.
 - **Bi-temporal memory.** Contradicting facts supersede rather than delete. `recall --mode handoff` replays the timeline — including what you believed before and what replaced it.
-- **No LLM on the read path.** Full-text search (with CJK-aware segmentation) plus one-hop graph expansion, in milliseconds. The LLM only works on the write path, constrained by a fixed domain ontology.
+- **No LLM on the read path — hybrid retrieval with rank fusion.** Recall fuses multiple retrievers (BM25 lexical over facts, entity-graph expansion) with reciprocal rank fusion, then applies recency decay and a superseded penalty, capped per source — no single scorer is trusted alone. Raw episode content is keyword-searchable the moment it lands, before extraction runs, so literal error strings always match. All in milliseconds; the LLM only works on the write path, constrained by a fixed domain ontology.
 - **Agent-native.** Every command supports `--json`. Add a few lines to your agent's instructions and it can query memory, claim tasks, and write findings back mid-task.
 - **A field toolkit for the FDE motion.** Web research with citations (`research`), next-day demo briefs (`demo`), rubric-based acceptance judging (`eval`), a git-ready asset library (`asset`), and a data negotiation map (`datamap`).
 - **Traceable tasks (agent-pull dispatch).** Task cards live in the ledger with a state machine and an audit trail; `openfde context <task>` assembles the ammunition pack — constraints first, related memory after, everything cited.
@@ -75,6 +75,7 @@ pnpm openfde serve                          # workspace at :4517, printable repo
 | `openfde extract` | Ontology-constrained extraction + two-phase resolution (dedupe / supersede) |
 | `openfde recall <query>` | Search memory; `--mode handoff` for the timeline view; `--json` for agents |
 | `openfde remember <fact> --source <uri>` | Record knowledge discovered mid-task (agent write-back) |
+| `openfde whoknows <topic>` | Who is the expert — people ranked from recorded ownership, decisions, and mentions, with cited evidence |
 | `openfde task create/list/claim/start/done/accept` | Traceable task cards with a state machine and audit trail (agent-pull dispatch) |
 | `openfde context <task>` | Assemble the memory ammunition pack for a task: constraints + related facts, all cited |
 | `openfde research <query>` | Web-search for methods with cited sources; `--save` ingests findings into memory |

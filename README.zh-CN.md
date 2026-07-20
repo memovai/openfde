@@ -30,7 +30,7 @@ OpenFDE 把这三样变成一个系统，从记忆开始。
 - **本地优先。** 每个 engagement 一个 SQLite 目录（`~/.openfde/engagements/<slug>/`）。客户数据不出本机；交接一个项目就是移交一个目录。
 - **出处是强制的，不是建议。** 没有来源 URI 的内容在写入时直接拒绝。每条检索结果都能展开到逐字原文。
 - **双时间轴记忆。** 矛盾的事实做失效替代而非删除。`recall --mode handoff` 回放完整时间线——包括你当时相信什么、后来被什么取代。
-- **读路径无 LLM。** 全文检索（含 CJK 逐字切分）加一跳图扩展，毫秒级返回。LLM 只在写入侧工作，且受固定领域本体约束。
+- **读路径无 LLM——多路混合检索 + 排名融合。** recall 将多路检索器（事实 BM25 词法、实体图扩展）用倒数排名融合（RRF）合并，再叠加时间衰减与失效惩罚、按来源封顶——不信任任何单一打分器。原始 episode 落地即可关键词检索（先于抽取），错误串等字面量永远能精确命中。全程毫秒级；LLM 只在写入侧工作，且受固定领域本体约束。
 - **Agent 原生。** 所有命令支持 `--json`。在 agent 指令里加几行，它就能在任务中查询记忆、认领任务、回写发现。
 - **FDE 作战工具箱。** 带引用的联网调研（`research`）、隔天 demo 简报（`demo`）、rubric 验收判分（`eval`）、git 就绪的资产库（`asset`）、数据谈判地图（`datamap`）。
 - **可追溯的任务（agent-pull 派发）。** 任务卡存在 ledger 里，带状态机和审计事件流；`openfde context <task>` 组装弹药包——约束置顶、相关记忆随后、全部带引用。
@@ -74,6 +74,7 @@ pnpm openfde serve                 # 工作区 :4517，可打印报告在 /repor
 | `openfde extract` | 本体约束抽取 + 两阶段消解（去重 / 失效替代） |
 | `openfde recall <query>` | 检索记忆；`--mode handoff` 看时间线；`--json` 给 agent |
 | `openfde remember <fact> --source <uri>` | 记录任务中发现的新知识（agent 回写） |
+| `openfde whoknows <topic>` | 谁是某主题的专家——按记录在案的归属、决策、提及排序，附引用证据 |
 | `openfde task create/list/claim/start/done/accept` | 可追溯的任务卡：状态机 + 审计事件流（agent-pull 派发） |
 | `openfde context <task>` | 组装任务的记忆弹药包：约束 + 相关事实，全部带引用 |
 | `openfde status` | 当前 engagement 的记忆概况 |
